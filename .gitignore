@@ -2,3 +2,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
+
+# IntelliJ IDEA / IDEs de JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws

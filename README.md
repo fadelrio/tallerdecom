@@ -51,22 +51,27 @@ proyecto/
 ├── main.py                       # Orquestación conceptual y estados
 ├── config.py                     # SimulationConfig y rutas de ejemplo
 ├── README.md                     # Documentación y estado real
+├── ENTORNO.md                    # Instalación del venv para colaboradores
 ├── requirements.txt              # Dependencia de pruebas
 ├── .gitignore                    # Cachés y entorno virtual local
 ├── transmitter/
+│   ├── README.md                  # Responsabilidades y tareas pendientes
 │   ├── __init__.py                # Paquete del transmisor
 │   ├── source_analysis.py         # Contrato de estadísticas y entropía
 │   ├── huffman.py                 # Contratos de Huffman y eficiencia
 │   └── source_encoder.py          # Contrato de codificación de fuente
 ├── receiver/
+│   ├── README.md                  # Responsabilidades y tareas pendientes
 │   ├── __init__.py                # Paquete del receptor
 │   └── source_decoder.py          # Contrato de decodificación de fuente
 ├── common/
+│   ├── README.md                  # Responsabilidades y tareas pendientes
 │   ├── __init__.py                # Paquete compartido
 │   ├── data_types.py              # Dataclasses sin cálculos
 │   ├── file_utils.py              # Contratos de E/S y comparación
 │   └── report_utils.py            # Contratos de datos del informe
 └── tests/
+    ├── README.md                  # Cobertura actual y ampliaciones futuras
     ├── __init__.py                # Paquete de pruebas
     └── test_source.py             # Imports, contratos y ejecución
 ```
@@ -75,6 +80,10 @@ Las estructuras compartidas no dependen del transmisor ni del receptor.
 Las utilidades de archivos no conocen Huffman. El módulo de informes prepara
 datos científicos para una futura presentación, sin generar PDF ni Word.
 No se introducen dependencias circulares.
+
+Cada paquete tiene una guía de sus archivos y del trabajo por implementar:
+[common](common/README.md), [transmitter](transmitter/README.md),
+[receiver](receiver/README.md) y [tests](tests/README.md).
 
 ## Interfaces y estructuras
 
@@ -162,6 +171,10 @@ No hace falta disponer de un archivo de entrada: no se leen ni escriben datos.
 Estas rutas de ejemplo pueden editarse en `config.py`.
 
 ## Dependencias y tests
+
+Consultar [Preparación del entorno para colaboradores](ENTORNO.md) para crear
+el entorno en Linux, macOS o Windows, configurar el editor y resolver problemas
+como `No module named pip`. La guía no requiere Codex.
 
 El código del sistema usa exclusivamente la biblioteca estándar de Python.
 `pytest` es la única dependencia externa y se utiliza para pruebas. No se
