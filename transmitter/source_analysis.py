@@ -16,6 +16,9 @@ def calculate_entropy(probabilities: dict[int, float]) -> float:
     Returns:
         Entropía en bits por símbolo: H(X) = -sum(p_i * log2(p_i)).
 
+    Raises:
+        ValueError: Si alguna probabilidad es negativa.
+
     Notes:
         Solo se suma sobre símbolos con probabilidad > 0 (los que realmente
         aparecieron en el texto), evitando log2(0). Si no hay símbolos
@@ -25,7 +28,11 @@ def calculate_entropy(probabilities: dict[int, float]) -> float:
     if not probabilities:
         return 0.0
 
-    return -sum(p * math.log2(p) for p in probabilities.values())
+    if any(p < 0 for p in probabilities.values()):
+        raise ValueError("Las probabilidades no pueden ser negativas.")
+
+    # El término de probabilidad cero aporta cero, sin evaluar log2(0).
+    return -sum(p * math.log2(p) for p in probabilities.values() if p > 0)
 
 
 def analyze_source(data: bytes) -> SourceStatistics:

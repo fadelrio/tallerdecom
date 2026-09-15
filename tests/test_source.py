@@ -111,7 +111,14 @@ def test_function_contracts(
     assert inspect.getdoc(function)
 
 
-@pytest.mark.parametrize("module_name, name, expected", CONTRACTS[:-2])
+@pytest.mark.parametrize("module_name, name, expected", [
+    contract for contract in CONTRACTS
+    if contract[1] not in {
+        "main", "load_config", "encode_source", "analyze_source",
+        "decode_source", "build_huffman_code", "calculate_efficiency",
+        "read_file",
+    }
+])
 def test_placeholders_are_explicit(
     module_name: str,
     name: str,

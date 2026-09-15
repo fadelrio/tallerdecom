@@ -10,7 +10,7 @@ y cada símbolo como un entero entre 0 y 255.
 | --- | --- | --- |
 | `__init__.py` | Identifica y documenta el paquete. | No requiere lógica adicional; mantenerlo sin efectos secundarios al importar. |
 | `data_types.py` | Define las siete dataclasses compartidas y documenta sus atributos. | Las estructuras ya están definidas. Mantener sus contratos al conectar las funcionalidades; los cálculos corresponden a los otros módulos. |
-| `file_utils.py` | Declara `read_file`, `write_file` y `compare_data`. | Leer y escribir en modo binario mediante rutas `Path`; comparar igualdad exacta y tamaños y devolver `FileComparison`. |
+| `file_utils.py` | Implementa `read_file`; declara `write_file` y `compare_data`. | Implementar escritura binaria mediante rutas `Path`; comparar igualdad exacta y tamaños y devolver `FileComparison`. |
 | `report_utils.py` | Declara `build_source_table` y `build_coding_report`. | Preparar filas por símbolo y métricas comparativas a partir de los resultados de fuente y Huffman. |
 | `README.md` | Describe responsabilidades y pendientes del paquete. | Actualizarlo cuando cambien las interfaces o su implementación. |
 
@@ -39,7 +39,8 @@ de símbolos pertenecen a la presentación. No se generan documentos PDF o Word.
 ## Estado y límites
 
 Las dataclasses están disponibles y no realizan cálculos ni validaciones.
-Todas las funciones de `file_utils.py` y `report_utils.py` son placeholders que
+`read_file` usa `Path.read_bytes()` y propaga errores de E/S. Escritura,
+comparación y funciones de `report_utils.py` siguen como placeholders que
 lanzan `NotImplementedError`. Las utilidades de archivos no deben depender de
 Huffman y `data_types.py` no debe depender del transmisor ni del receptor.
 

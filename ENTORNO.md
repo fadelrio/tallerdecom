@@ -82,8 +82,10 @@ python -m pytest -q
 
 La primera salida debe apuntar al Python dentro de `.venv`. El programa
 principal muestra las etapas pendientes y no requiere un archivo de entrada.
-La suite actual contiene 37 pruebas del esqueleto; no prueba algoritmos ya
-implementados. `pytest` es la única dependencia externa directa del proyecto;
+La suite incluye arquitectura, análisis y codificación por bloques e
+integración con Huffman. Las pruebas que requieren el decodificador se omiten.
+La suite da 59 aprobadas y 3 omitidas; consultar el
+[estado de las pruebas](tests/README.md). `pytest` es la única dependencia externa directa del proyecto;
 `pip` también instalará las dependencias propias de esa herramienta.
 
 Para salir de un entorno activado:

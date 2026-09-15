@@ -6,7 +6,7 @@ from common.data_types import FileComparison
 
 
 def read_file(path: Path) -> bytes:
-    """Leerá el archivo de entrada en modo binario.
+    """Lee el archivo de entrada en modo binario.
 
     Args:
         path: Ruta del archivo que se leerá.
@@ -15,9 +15,9 @@ def read_file(path: Path) -> bytes:
         Contenido completo como bytes, sin interpretación textual.
 
     Raises:
-        NotImplementedError: La lectura está pendiente.
+        OSError: Si el archivo no existe o no puede leerse.
     """
-    raise NotImplementedError("Lectura binaria pendiente.")
+    return path.read_bytes()
 
 
 def write_file(path: Path, data: bytes) -> None:
