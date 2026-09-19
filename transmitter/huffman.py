@@ -3,6 +3,7 @@
 from common.data_types import HuffmanResult, CodeStatistics
 from dataclasses import dataclass
 import heapq
+import math
 
 @dataclass
 class _Node:
@@ -56,7 +57,7 @@ def build_huffman_code(probabilities: dict[int, float]) -> HuffmanResult:
         codebook = {symbol: "0"}
 
         stats = CodeStatistics(
-            minimum_length=1,
+            minimum_length=0.0,
             average_length=1.0,
             variance=0.0,
             is_prefix_code=True,
@@ -106,7 +107,7 @@ def build_huffman_code(probabilities: dict[int, float]) -> HuffmanResult:
         for symbol, code in codebook.items()
     }
 
-    minimum_length = min(lengths.values())
+    minimum_length = -sum(p * math.log2(p) for p in probabilities.values() if p > 0)
 
     average_length = sum(
         probabilities[s] * lengths[s]

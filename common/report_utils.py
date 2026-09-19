@@ -62,6 +62,9 @@ def build_coding_report(
 def print_source(stats) -> None:
     """Imprime de forma legible las estadísticas de una fuente analizada.
 
+    Los símbolos se muestran en orden de probabilidad decreciente. Ante
+    igualdad de probabilidad, se ordenan por valor de símbolo ascendente.
+
     Args:
         stats: Resultado de analyze_source (SourceStatistics), con conteos,
             probabilidades, total de símbolos y entropía.
@@ -87,7 +90,12 @@ def print_source(stats) -> None:
     print(f"{'Símbolo':<8}{'Carácter':<24}{'Cantidad':<10}{'Probabilidad':<14}")
     print("-" * 56)
 
-    for symbol in sorted(stats.counts):
+    ordered_symbols = sorted(
+        stats.probabilities,
+        key=lambda symbol: (-stats.probabilities[symbol], symbol),
+    )
+
+    for symbol in ordered_symbols:
         count = stats.counts[symbol]
         probability = stats.probabilities[symbol]
 
