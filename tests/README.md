@@ -82,8 +82,8 @@ No se agregaron benchmarks de tiempo o memoria.
 
 ## Resultado y cobertura de errores
 
-La suite da **59 aprobadas y 3 omitidas**. Las omisiones corresponden al
-receptor pendiente. Eficiencia y lectura ya no se prueban como placeholders.
+La suite da **62 aprobadas, sin omisiones**. El receptor ya ejecuta las
+pruebas de ida y vuelta. Eficiencia y lectura ya no se prueban como placeholders.
 
 Las pruebas nuevas comprueban eficiencia conocida y cero, rechazo de entropía
 negativa y longitud no positiva, entropía con probabilidades cero o negativas,
@@ -91,4 +91,12 @@ y los contratos de análisis y Huffman para entrada vacía.
 
 `test_main.py` verifica lectura binaria exacta, que un archivo vacío no llegue
 a Huffman ni modifique una salida existente, y que una entrada válida ejecute
-el transmisor sin invocar la decodificación pendiente. No hay benchmarks.
+el transmisor sin invocar todavía la decodificación. No hay benchmarks.
+
+## Pruebas manuales
+
+`test_B.py` fue trasladado a [experiments/test_B.py](../experiments/test_B.py).
+Consultar [su guía](../experiments/README.md) para ejecutar la prueba original con `textito.txt`. No hay lectura de `textito.txt` durante la recolección.
+El auxiliar `_available` sigue presente por compatibilidad, pero actualmente
+ninguna de sus llamadas se omite. Quedan por agregar pruebas de códigos
+inválidos del receptor y del significado de `minimum_length` como H(X).

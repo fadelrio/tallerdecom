@@ -83,8 +83,8 @@ python -m pytest -q
 La primera salida debe apuntar al Python dentro de `.venv`. El programa
 principal muestra las etapas pendientes y no requiere un archivo de entrada.
 La suite incluye arquitectura, análisis y codificación por bloques e
-integración con Huffman. Las pruebas que requieren el decodificador se omiten.
-La suite da 59 aprobadas y 3 omitidas; consultar el
+integración con Huffman. Las pruebas de decodificación ya se ejecutan.
+La suite da 62 aprobadas sin omisiones; consultar el
 [estado de las pruebas](tests/README.md). `pytest` es la única dependencia externa directa del proyecto;
 `pip` también instalará las dependencias propias de esa herramienta.
 

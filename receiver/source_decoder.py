@@ -1,4 +1,4 @@
-"""Contrato de decodificación de fuente."""
+"""Decodificación de fuente mediante un árbol binario."""
 
 from common.data_types import EncodedSource
 from dataclasses import dataclass
@@ -15,7 +15,7 @@ class _DecodeNode:
         return self.symbol is not None
 
 def decode_source(encoded: EncodedSource, codebook: dict[int, str]) -> bytes:
-    """Reconstruirá la secuencia original de símbolos.
+    """Reconstruye la secuencia original de símbolos.
 
     Args:
         encoded: Secuencia binaria representada como cadena de bits.
@@ -25,16 +25,20 @@ def decode_source(encoded: EncodedSource, codebook: dict[int, str]) -> bytes:
         Bytes reconstruidos a partir de la secuencia binaria y el código.
 
     Raises:
-        NotImplementedError: La funcionalidad está pendiente.
+        TypeError: Si codebook no es un diccionario.
+        ValueError: Si hay bits inválidos, palabras duplicadas, una secuencia
+            incompatible o una palabra final incompleta.
 
     Notes:
-        Deberá reconocer las palabras del código y recuperar los símbolos
-        originales sin efectuar conversiones de codificación de texto.
+        Reconoce palabras y recupera bytes sin convertirlos a texto.
+        Se requiere un código prefijo con palabras binarias no vacías y
+        símbolos 0..255. La validación de ese contrato aún es incompleta.
+        Una secuencia vacía devuelve bytes vacíos con un código válido.
     """
 
     #raise NotImplementedError("Decodificación de fuente pendiente.")
 
-     if not isinstance(codebook, dict):
+    if not isinstance(codebook, dict):
         raise TypeError("codebook debe ser un diccionario.")
 
     bits = encoded.bits

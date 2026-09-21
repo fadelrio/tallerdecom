@@ -25,14 +25,15 @@ class CodeStatistics:
     """Características de las palabras del código Huffman.
 
     Attributes:
-        minimum_length: Longitud mínima de una palabra en bits.
+        minimum_length: Límite inferior teórico del largo promedio, H(X),
+            en bits por símbolo; no es la palabra más corta.
         average_length: Longitud promedio ponderada en bits por símbolo.
         variance: Varianza de las longitudes ponderada por probabilidad,
             en bits cuadrados.
         is_prefix_code: Indica si ninguna palabra es prefijo de otra.
     """
 
-    minimum_length: int
+    minimum_length: float
     average_length: float
     variance: float
     is_prefix_code: bool
@@ -100,7 +101,8 @@ class CodingReport:
 
     Attributes:
         entropy: Entropía en bits por símbolo.
-        minimum_length: Longitud mínima de Huffman en bits.
+        minimum_length: Límite inferior teórico del largo promedio, H(X),
+            en bits por símbolo.
         average_length: Longitud promedio de Huffman en bits por símbolo.
         variance: Varianza de longitudes en bits cuadrados.
         efficiency: Cociente adimensional entre entropía y longitud promedio.
@@ -110,7 +112,7 @@ class CodingReport:
     """
 
     entropy: float
-    minimum_length: int
+    minimum_length: float
     average_length: float
     variance: float
     efficiency: float

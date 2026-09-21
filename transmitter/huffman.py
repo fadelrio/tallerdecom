@@ -34,7 +34,9 @@ def build_huffman_code(probabilities: dict[int, float]) -> HuffmanResult:
     Notes:
         Construye un árbol y calcula longitudes y propiedad de prefijo.
         Se esperan probabilidades normalizadas de símbolos 0..255.
-        Un símbolo único recibe la palabra "0".
+        Un símbolo único recibe la palabra "0". minimum_length es H(X),
+        el límite inferior del largo promedio, no la palabra más corta.
+        Huffman símbolo a símbolo no siempre alcanza ese límite.
     """
     """Construye un código Huffman de mínima varianza."""
 
@@ -92,7 +94,7 @@ def build_huffman_code(probabilities: dict[int, float]) -> HuffmanResult:
 
     codebook = {}
 
-    def assign_codes(node: _Node, prefix: str):
+    def assign_codes(node: _Node, prefix: str) -> None:
         if node.is_leaf:
             codebook[node.symbol] = prefix
             return

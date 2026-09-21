@@ -22,7 +22,7 @@ Los conteos y probabilidades usan símbolos enteros `0..255`. La entropía se
 expresa en bits por símbolo.
 
 `build_huffman_code` recibe el diccionario de probabilidades y devuelve un
-`HuffmanResult` con el código y sus `CodeStatistics`: longitud mínima,
+`HuffmanResult` con el código y sus `CodeStatistics`: largo promedio mínimo teórico H(X),
 longitud promedio y varianza ponderadas por probabilidad, y verificación de
 código prefijo. El cálculo de estas estadísticas pertenece a esta función.
 `calculate_efficiency` devuelve `H(X) / L_promedio` como fracción adimensional.
@@ -56,7 +56,7 @@ han realizado mediciones de tiempo o memoria.
 
 Las pruebas funcionales e integraciones están en `tests/test_transmitter.py`.
 Las integraciones se omiten mientras sus dependencias lancen
-`NotImplementedError`. La decodificación todavía está pendiente.
+`NotImplementedError`. La decodificación está implementada y las pruebas de ida y vuelta pasan.
 
 ## Política de errores y archivo vacío
 

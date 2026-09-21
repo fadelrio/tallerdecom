@@ -1,3 +1,4 @@
+from receiver.source_decoder import decode_source
 from transmitter.source_analysis import analyze_source, calculate_entropy
 from transmitter.huffman import build_huffman_code
 from transmitter.source_encoder import encode_source
@@ -21,5 +22,13 @@ print_huffman(cod_huffman) #imprime el código y sus estadísticos
 print(cod_huffman.codebook[10]) #Imprime la palabra binaria correspondiente al 
 #símbolo 10 (salto de línea) en el código Huffman generado.
 
+print("codificado:")
+
 codificacion = encode_source(datos, cod_huffman.codebook) #Codifica la fuente de datos utilizando el código Huffman generado.
 print(codificacion)
+
+decodificacion = decode_source(codificacion, cod_huffman.codebook)
+
+print("decodificado:")
+
+print(decodificacion.decode("utf-8"))

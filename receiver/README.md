@@ -1,35 +1,41 @@
 # Receptor: decodificación de fuente
 
-Este paquete define la interfaz para recuperar los bytes originales en el
-apartado B. La decodificación todavía no está implementada.
+La decodificación está implementada mediante un árbol binario. Recupera los
+bytes originales y pasa las pruebas de ida y vuelta con el transmisor.
 
-## Archivos y trabajo pendiente
+## Archivos
 
-| Archivo | Responsabilidad actual | Qué implementar posteriormente |
-| --- | --- | --- |
-| `__init__.py` | Identifica y documenta el paquete del receptor. | No requiere lógica adicional; mantenerlo sin efectos secundarios al importar. |
-| `source_decoder.py` | Declara `decode_source(encoded, codebook) -> bytes`. | Reconocer las palabras Huffman en la secuencia binaria y reconstruir los símbolos originales en orden. |
-| `README.md` | Describe responsabilidades y pendientes del paquete. | Actualizarlo cuando se implemente o cambie la interfaz. |
+- `__init__.py`: identifica el paquete; no requiere lógica adicional.
+- `source_decoder.py`: `decode_source(encoded, codebook) -> bytes` construye
+  el árbol a partir del diccionario y recorre la secuencia de bits. Pendiente:
+  completar validaciones del diccionario y conectar el receptor en `main.py`.
+- `README.md`: estado, contratos y trabajo pendiente del receptor.
 
-## Contrato de decodificación
+## Comportamiento actual
 
-`decode_source` recibirá un `EncodedSource` cuya cadena contiene bits `'0'` y
-`'1'`, y el diccionario `dict[int, str]` que asocia símbolos `0..255` con
-palabras Huffman. Deberá devolver `bytes`, preservando controles y valores no
-imprimibles sin convertirlos a texto.
+Los símbolos son enteros 0..255. Se devuelve `bytes`, sin interpretación de
+texto. Con un código válido, una secuencia vacía devuelve `b""`. Se rechazan
+bits de entrada distintos de 0/1, palabras duplicadas, recorridos incompatibles
+con el árbol y secuencias que terminan con una palabra incompleta.
 
-Actualmente la función lanza `NotImplementedError`. Al implementarla habrá
-que definir y probar el comportamiento para secuencias vacías, bits inválidos,
-palabras incompletas y códigos inválidos, de forma consistente con el
-transmisor. Estas políticas aún no están definidas.
+La función requiere un diccionario prefijo con palabras binarias no vacías.
+Actualmente no valida completamente esa precondición: una letra en una palabra
+se trata como una rama derecha; tampoco se detectan todos los conflictos de
+prefijos o palabras vacías. No se debe usar con diccionarios arbitrarios sin
+validar. Estas limitaciones no se corrigieron en esta revisión.
 
-## Integración y pruebas futuras
+## Validación recomendada (pendiente)
 
-La escritura del archivo recibido y la comparación pertenecen a
-`common/file_utils.py`; la conexión entre etapas corresponde a `main.py`.
-La demodulación y la decodificación de canal pertenecen a etapas futuras.
+Al construir el árbol, comprobar símbolos enteros 0..255 y palabras no vacías
+formadas solo por 0/1. Si se intenta continuar desde una hoja, una palabra
+anterior es prefijo de la nueva. Si el nodo final ya tiene hijos, la nueva
+palabra es prefijo de otra. Rechazar ambos casos y palabras duplicadas con
+`ValueError`. Así se comprueba el código mientras se construye el árbol, sin
+comparar todas las parejas de palabras. Agregar pruebas para ambos órdenes de
+inserción del conflicto, caracteres inválidos y palabras vacías.
 
-Las pruebas deberán verificar ejemplos de decodificación conocidos y la
-recuperación exacta de bytes tras codificar y decodificar, una vez disponibles
-ambas operaciones. Se reemplazará la prueba que espera `NotImplementedError`
-para esta interfaz y se actualizará el [README general](../README.md).
+## Integración
+
+`main.py` todavía no llama al receptor. Escritura y comparación siguen pendientes
+en `common/file_utils.py`. Las pruebas de `tests/test_transmitter.py` ya ejecutan
+la recuperación completa. La demodulación y decodificación de canal son futuras.

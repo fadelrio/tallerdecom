@@ -4,7 +4,7 @@ Proyecto académico en Python para simular un sistema de comunicaciones
 digitales. Esta primera etapa contiene exclusivamente la arquitectura de los
 apartados **A (datos, control y estructura general)** y **B (fuente y Huffman)**.
 Están implementados el análisis de fuente, la entropía, Huffman y sus
-estadísticas, la eficiencia y la codificación por bloques. La decodificación,
+estadísticas, la eficiencia, la codificación por bloques y la decodificación.
 la escritura, la comparación y los datos del informe siguen pendientes.
 La lectura binaria y el transmisor están conectados al principal.
 
@@ -66,13 +66,17 @@ proyecto/
 ├── receiver/
 │   ├── README.md                  # Responsabilidades y tareas pendientes
 │   ├── __init__.py                # Paquete del receptor
-│   └── source_decoder.py          # Contrato de decodificación de fuente
+│   └── source_decoder.py          # Decodificación mediante árbol binario
 ├── common/
 │   ├── README.md                  # Responsabilidades y tareas pendientes
 │   ├── __init__.py                # Paquete compartido
 │   ├── data_types.py              # Dataclasses sin cálculos
 │   ├── file_utils.py              # Contratos de E/S y comparación
 │   └── report_utils.py            # Contratos de datos del informe
+├── experiments/
+│   ├── __init__.py                # Paquete de experimentos manuales
+│   ├── test_B.py                  # Prueba manual original del transmisor
+│   └── README.md                  # Ejecución y nuevos experimentos
 └── tests/
     ├── README.md                  # Cobertura actual y ampliaciones futuras
     ├── __init__.py                # Paquete de pruebas
@@ -106,7 +110,7 @@ Cada paquete tiene una guía de sus archivos y del trabajo por implementar:
 `common.data_types` define:
 
 - `SourceStatistics`: conteos, probabilidades, total de símbolos y entropía.
-- `CodeStatistics`: longitud mínima, promedio, varianza y propiedad de prefijo.
+- `CodeStatistics`: largo promedio mínimo teórico H(X), promedio, varianza y propiedad de prefijo.
 - `HuffmanResult`: diccionario del código y sus estadísticas.
 - `EncodedSource`: cadena de bits.
 - `FileComparison`: igualdad y tamaños en bytes.
@@ -138,13 +142,13 @@ diccionario vacío y asigna "0" al símbolo único. El principal rechaza archivo
 - [x] Análisis estadístico y probabilidades
 - [x] Entropía
 - [x] Huffman
-- [x] Longitud mínima
+- [x] Largo promedio mínimo teórico H(X)
 - [x] Longitud promedio
 - [x] Varianza
 - [x] Verificación de código prefijo
 - [x] Eficiencia
 - [x] Codificación de fuente por bloques
-- [ ] Decodificación
+- [x] Decodificación de fuente
 - [ ] Generación del archivo recibido
 - [ ] Comparación con el original
 - [ ] Datos para el informe y comparación con código fijo de 8 bits
@@ -160,7 +164,7 @@ diccionario vacío y asigna "0" al símbolo único. El principal rechaza archivo
 
 Las marcas indican que existe implementación, no una validación exhaustiva.
 Quedan pendientes las funcionalidades no marcadas. La suite da
-**59 aprobadas y 3 omitidas**, estas últimas por el decodificador pendiente.
+**62 aprobadas, sin omisiones**.
 Ver [detalles de pruebas](tests/README.md).
 
 ## Ejecución
@@ -245,3 +249,24 @@ omiten con `pytest.skip` solo si lanzan `NotImplementedError`; los demás errore
 fallan normalmente. Al implementar esos módulos, sus pruebas se ejecutarán
 sin modificar la selección. Ejecutar `python -m pytest -q -rs` para ver motivos
 de omisión. Una prueba omitida no cuenta como funcionalidad verificada.
+
+## Interpretación de la longitud mínima
+
+`minimum_length` es un `float` que representa H(X), el límite inferior
+teórico del largo promedio en bits por símbolo. No representa la palabra
+más corta. El promedio real está en `average_length`: para probabilidades
+no diádicas, Huffman símbolo a símbolo puede quedar por encima de H(X).
+Para un único símbolo, H(X) es 0 y la palabra elegida "0" mide 1 bit.
+
+## Experimentos y presentación
+
+Las demostraciones manuales están en [experiments](experiments/README.md).
+`tests/test_B.py` se trasladó a `experiments/test_B.py` conservando exactamente
+su contenido original. Se ejecuta manualmente desde la raíz y usa
+`textito.txt`. `pytest.ini` limita la recolección automática a `tests/`. `print_source` y `print_huffman` muestran tablas en consola;
+`build_source_table` y `build_coding_report` siguen pendientes.
+
+El receptor está implementado y probado con códigos válidos. Falta conectarlo
+al principal, que todavía lo muestra como pendiente. Su validación de códigos
+malformados es incompleta; ver [receiver](receiver/README.md). No se cambió
+su algoritmo en esta actualización documental.

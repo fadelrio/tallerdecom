@@ -59,7 +59,7 @@ def build_coding_report(
     """
     raise NotImplementedError("Datos comparativos del informe pendientes.")
 
-def print_source(stats) -> None:
+def print_source(stats: SourceStatistics) -> None:
     """Imprime de forma legible las estadísticas de una fuente analizada.
 
     Los símbolos se muestran en orden de probabilidad decreciente. Ante
@@ -112,7 +112,7 @@ def print_source(stats) -> None:
     print(f"Total de símbolos: {stats.total_symbols}")
     print(f"Entropía: {stats.entropy:.4f} bits/símbolo")
 
-def print_huffman(result) -> None:
+def print_huffman(result: HuffmanResult) -> None:
     """Imprime de forma legible el código Huffman y sus estadísticas.
 
     Args:
@@ -159,7 +159,7 @@ def print_huffman(result) -> None:
         print(f"{symbol:<8}{char_repr:<24}{code:<14}{len(code):<6}")
 
     print("-" * 52)
-    print(f"Longitud mínima: {stats.minimum_length} bits")
+    print(f"Largo promedio mínimo teórico H(X): {stats.minimum_length} bits/símbolo")
     print(f"Longitud promedio: {stats.average_length:.4f} bits/símbolo")
     print(f"Varianza: {stats.variance:.4f} bits²")
     print(f"¿Es código prefijo?: {'Sí' if stats.is_prefix_code else 'No'}")

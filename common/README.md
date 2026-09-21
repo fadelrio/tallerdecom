@@ -17,12 +17,12 @@ y cada símbolo como un entero entre 0 y 255.
 ## Estructuras de datos
 
 - `SourceStatistics`: conteos, probabilidades, total de símbolos y entropía.
-- `CodeStatistics`: longitud mínima, promedio, varianza y propiedad de prefijo.
+- `CodeStatistics`: largo promedio mínimo teórico H(X), promedio, varianza y propiedad de prefijo.
 - `HuffmanResult`: diccionario de palabras Huffman y estadísticas del código.
 - `EncodedSource`: secuencia de bits como cadena de `'0'` y `'1'`.
 - `FileComparison`: igualdad y tamaños original y recibido en bytes.
 - `SourceReport`: símbolo, cantidad, probabilidad y palabra Huffman.
-- `CodingReport`: entropía, longitud mínima y promedio, varianza, eficiencia,
+- `CodingReport`: entropía, largo promedio mínimo teórico y promedio real, varianza, eficiencia,
   longitud fija de referencia y totales de bits Huffman y fijo.
 
 ## Implementación futura del informe
@@ -46,3 +46,14 @@ Huffman y `data_types.py` no debe depender del transmisor ni del receptor.
 
 Al implementar una interfaz, actualizar sus docstrings, las pruebas en
 [`tests/`](../tests/README.md) y el [estado general](../README.md).
+
+## Presentación en consola
+
+`report_utils.py` también contiene `print_source(stats: SourceStatistics)` y
+`print_huffman(result: HuffmanResult)`, ambas con retorno `None`. Imprimen tablas
+con símbolos y métricas sin modificar los datos; los controles tienen etiquetas
+y los bytes no imprimibles se muestran en hexadecimal. Las funciones que
+construyen estructuras de informe siguen pendientes.
+
+`minimum_length` se anota como `float`: representa H(X), el mínimo promedio
+teórico en bits por símbolo. No es la menor longitud de una palabra Huffman.
