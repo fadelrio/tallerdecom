@@ -8,7 +8,7 @@ import math
 @dataclass
 class _Node:
     probability: float
-    symbol: int | None = None
+    symbol: str | None = None
     left: "_Node | None" = None
     right: "_Node | None" = None
 
@@ -17,7 +17,7 @@ class _Node:
         return self.symbol is not None
 
 
-def build_huffman_code(probabilities: dict[int, float]) -> HuffmanResult:
+def build_huffman_code(probabilities: dict[str, float]) -> HuffmanResult:
     """Construye el código Huffman y calcula sus estadísticas.
 
     Args:
@@ -33,7 +33,7 @@ def build_huffman_code(probabilities: dict[int, float]) -> HuffmanResult:
 
     Notes:
         Construye un árbol y calcula longitudes y propiedad de prefijo.
-        Se esperan probabilidades normalizadas de símbolos 0..255.
+        Se esperan probabilidades normalizadas de caracteres Unicode.
         Un símbolo único recibe la palabra "0". minimum_length es H(X),
         el límite inferior del largo promedio, no la palabra más corta.
         Huffman símbolo a símbolo no siempre alcanza ese límite.

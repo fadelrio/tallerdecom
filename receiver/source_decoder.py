@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 @dataclass
 class _DecodeNode:
-    symbol: int | None = None
+    symbol: str | None = None
     left: "_DecodeNode | None" = None
     right: "_DecodeNode | None" = None
 
@@ -14,15 +14,15 @@ class _DecodeNode:
     def is_leaf(self) -> bool:
         return self.symbol is not None
 
-def decode_source(encoded: EncodedSource, codebook: dict[int, str]) -> bytes:
+def decode_source(encoded: EncodedSource, codebook: dict[str, str]) -> str:
     """Reconstruye la secuencia original de símbolos.
 
     Args:
         encoded: Secuencia binaria representada como cadena de bits.
-        codebook: Palabras Huffman asociadas a símbolos enteros 0..255.
+        codebook: Palabras Huffman asociadas a símbolos caracteres Unicode.
 
     Returns:
-        Bytes reconstruidos a partir de la secuencia binaria y el código.
+        Texto reconstruido a partir de la secuencia binaria y el código.
 
     Raises:
         TypeError: Si codebook no es un diccionario.
@@ -30,10 +30,10 @@ def decode_source(encoded: EncodedSource, codebook: dict[int, str]) -> bytes:
             incompatible o una palabra final incompleta.
 
     Notes:
-        Reconoce palabras y recupera bytes sin convertirlos a texto.
+        Reconoce palabras y recupera los caracteres originales.
         Se requiere un código prefijo con palabras binarias no vacías y
-        símbolos 0..255. La validación de ese contrato aún es incompleta.
-        Una secuencia vacía devuelve bytes vacíos con un código válido.
+        caracteres Unicode. La validación de ese contrato aún es incompleta.
+        Una secuencia vacía devuelve texto vacío con un código válido.
     """
 
     #raise NotImplementedError("Decodificación de fuente pendiente.")
@@ -68,7 +68,7 @@ def decode_source(encoded: EncodedSource, codebook: dict[int, str]) -> bytes:
         node.symbol = symbol
 
     # Recorrido del árbol.
-    decoded = bytearray()
+    decoded: list[str] = []
     node = root
 
     for bit in bits:
@@ -87,4 +87,4 @@ def decode_source(encoded: EncodedSource, codebook: dict[int, str]) -> bytes:
     if node is not root:
         raise ValueError("La secuencia termina con una palabra incompleta.")
 
-    return bytes(decoded)
+    return "".join(decoded)

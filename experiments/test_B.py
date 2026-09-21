@@ -9,7 +9,7 @@ from common.report_utils import print_source, print_huffman
 from pathlib import Path
 
 ruta = Path("textito.txt")
-datos = read_file(ruta) #Genera un binario a partir del archivo de texto
+datos = read_file(ruta) #Lee el texto UTF-8 preservando los caracteres de control
 
 r = analyze_source(datos)
 
@@ -19,8 +19,8 @@ print_source(r) #imprime los resultados del análisis de la fuente, incluyendo c
 cod_huffman = build_huffman_code(r.probabilities)
 print_huffman(cod_huffman) #imprime el código y sus estadísticos
 
-print(cod_huffman.codebook[10]) #Imprime la palabra binaria correspondiente al 
-#símbolo 10 (salto de línea) en el código Huffman generado.
+print(cod_huffman.codebook["\n"]) #Imprime la palabra binaria correspondiente al
+#carácter de salto de línea (salto de línea) en el código Huffman generado.
 
 print("codificado:")
 
@@ -31,4 +31,4 @@ decodificacion = decode_source(codificacion, cod_huffman.codebook)
 
 print("decodificado:")
 
-print(decodificacion.decode("utf-8"))
+print(decodificacion)

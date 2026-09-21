@@ -5,8 +5,7 @@ No es necesario convertirlos en herramientas con argumentos ni tests pytest.
 
 ## Archivos
 
-- `test_B.py`: original trasladado desde `tests/test_B.py`, sin cambios en su
-  contenido. Lee `textito.txt`, imprime análisis y Huffman, muestra el código
+- `test_B.py`: original trasladado desde `tests/test_B.py`, con los ajustes de interfaz necesarios para texto. Lee `textito.txt`, imprime análisis y Huffman, muestra el código
   del salto de línea y la fuente codificada completa.
 - `__init__.py`: permite ejecutar los scripts como módulos desde la raíz.
 - `README.md`: instrucciones para las pruebas manuales.
@@ -21,7 +20,7 @@ python -m experiments.test_B
 
 `textito.txt` debe estar en el directorio de trabajo (la raíz con este comando).
 El script original requiere al menos un salto de línea, porque consulta
- directamente el símbolo 10 del diccionario Huffman. Se mantienen estas
+ directamente el carácter \n del diccionario Huffman. El resultado decodificado ahora es str y se imprime directamente. Se mantienen estas
 condiciones y la impresión completa de bits tal como estaban.
 
 En un IDE, seleccionar el módulo `experiments.test_B`, el intérprete del entorno

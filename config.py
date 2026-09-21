@@ -9,8 +9,8 @@ class SimulationConfig:
     """Rutas del sistema de comunicaciones.
 
     Attributes:
-        input_file: Ruta del archivo de entrada binario.
-        output_file: Ruta del futuro archivo recibido binario.
+        input_file: Ruta del archivo de entrada .txt UTF-8.
+        output_file: Ruta del futuro archivo recibido .txt UTF-8.
     """
 
     input_file: Path
@@ -27,4 +27,4 @@ def load_config() -> SimulationConfig:
         No lee ni crea archivos. Las rutas pueden editarse aquí.
     """
     root = Path(__file__).resolve().parent
-    return SimulationConfig(root / "entrada.bin", root / "recibido.bin")
+    return SimulationConfig(root / "entrada.txt", root / "recibido.txt")

@@ -1,21 +1,22 @@
 """Estructuras compartidas; no realizan cálculos ni validaciones."""
 
 from dataclasses import dataclass
+from collections.abc import Iterator
 
 
 @dataclass
 class SourceStatistics:
-    """Resultados del análisis de una fuente de bytes.
+    """Resultados del análisis de una fuente de caracteres.
 
     Attributes:
-        counts: Cantidad de apariciones por símbolo entero entre 0 y 255.
-        probabilities: Probabilidad por símbolo entero entre 0 y 255.
-        total_symbols: Cantidad total de bytes de la fuente.
+        counts: Cantidad de apariciones por carácter Unicode.
+        probabilities: Probabilidad por carácter Unicode.
+        total_symbols: Cantidad total de caracteres de la fuente.
         entropy: Entropía de la fuente en bits por símbolo.
     """
 
-    counts: dict[int, int]
-    probabilities: dict[int, float]
+    counts: dict[str, int]
+    probabilities: dict[str, float]
     total_symbols: int
     entropy: float
 
@@ -44,11 +45,11 @@ class HuffmanResult:
     """Código Huffman y sus estadísticas.
 
     Attributes:
-        codebook: Palabra binaria de cada símbolo entero entre 0 y 255.
+        codebook: Palabra binaria de cada carácter Unicode.
         statistics: Características del código construido.
     """
 
-    codebook: dict[int, str]
+    codebook: dict[str, str]
     statistics: CodeStatistics
 
 
@@ -62,15 +63,37 @@ class EncodedSource:
 
     bits: str
 
+    def iter_codewords(self, codebook: dict[str, str]) -> Iterator[str]:
+        """Recorre las palabras binarias sin duplicar toda la salida.
+
+        Args:
+            codebook: Código prefijo válido usado para codificar la fuente.
+
+        Yields:
+            Palabra binaria correspondiente a cada carácter, en orden.
+
+        Raises:
+            ValueError: Si quedan bits sin formar una palabra completa.
+        """
+        words = set(codebook.values())
+        start = 0
+        for end in range(1, len(self.bits) + 1):
+            word = self.bits[start:end]
+            if word in words:
+                yield word
+                start = end
+        if start != len(self.bits):
+            raise ValueError("Palabra binaria incompleta o incompatible.")
+
 
 @dataclass
 class FileComparison:
     """Resultado de comparar la fuente original y la recibida.
 
     Attributes:
-        identical: Indica igualdad exacta de ambas secuencias de bytes.
-        original_size: Tamaño original en bytes.
-        received_size: Tamaño recibido en bytes.
+        identical: Indica igualdad exacta de ambas secuencias de caracteres.
+        original_size: Tamaño original en caracteres.
+        received_size: Tamaño recibido en caracteres.
     """
 
     identical: bool
@@ -83,13 +106,13 @@ class SourceReport:
     """Fila de la tabla de símbolos del informe B.
 
     Attributes:
-        symbol: Byte de la fuente como entero entre 0 y 255.
+        symbol: Carácter de la fuente (un punto de código Unicode).
         count: Cantidad de apariciones del símbolo.
         probability: Probabilidad del símbolo.
         huffman_code: Palabra binaria asignada al símbolo.
     """
 
-    symbol: int
+    symbol: str
     count: int
     probability: float
     huffman_code: str

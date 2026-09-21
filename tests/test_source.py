@@ -31,21 +31,21 @@ MODULES = (
 
 CONTRACTS = (
     ("transmitter.source_analysis", "analyze_source",
-     {"data": bytes, "return": SourceStatistics}),
+     {"data": str, "return": SourceStatistics}),
     ("transmitter.huffman", "build_huffman_code",
-     {"probabilities": dict[int, float], "return": HuffmanResult}),
+     {"probabilities": dict[str, float], "return": HuffmanResult}),
     ("transmitter.huffman", "calculate_efficiency",
      {"entropy": float, "average_length": float, "return": float}),
     ("transmitter.source_encoder", "encode_source",
-     {"data": bytes, "codebook": dict[int, str], "return": EncodedSource}),
+     {"data": str, "codebook": dict[str, str], "return": EncodedSource}),
     ("receiver.source_decoder", "decode_source",
-     {"encoded": EncodedSource, "codebook": dict[int, str], "return": bytes}),
+     {"encoded": EncodedSource, "codebook": dict[str, str], "return": str}),
     ("common.file_utils", "read_file",
-     {"path": Path, "return": bytes}),
+     {"path": Path, "return": str}),
     ("common.file_utils", "write_file",
-     {"path": Path, "data": bytes, "return": type(None)}),
+     {"path": Path, "data": str, "return": type(None)}),
     ("common.file_utils", "compare_data",
-     {"original": bytes, "received": bytes, "return": FileComparison}),
+     {"original": str, "received": str, "return": FileComparison}),
     ("common.report_utils", "build_source_table",
      {"statistics": SourceStatistics, "huffman": HuffmanResult,
       "return": list[SourceReport]}),
@@ -69,23 +69,23 @@ def test_modules_import(module_name: str) -> None:
 
 def test_data_structures() -> None:
     """Verifica la instanciación y documentación con datos manuales."""
-    statistics = SourceStatistics({0: 1, 255: 1}, {0: 0.5, 255: 0.5}, 2, 1.0)
+    statistics = SourceStatistics({'\x00': 1, 'ÿ': 1}, {'\x00': 0.5, 'ÿ': 0.5}, 2, 1.0)
     code = CodeStatistics(1, 1.0, 0.0, True)
-    huffman = HuffmanResult({0: "0", 255: "1"}, code)
+    huffman = HuffmanResult({'\x00': "0", 'ÿ': "1"}, code)
     encoded = EncodedSource("01")
     comparison = FileComparison(True, 2, 2)
-    row = SourceReport(255, 1, 0.5, "1")
+    row = SourceReport("ÿ", 1, 0.5, "1")
     report = CodingReport(1.0, 1, 1.0, 0.0, 1.0, 8, 2, 16)
-    config = SimulationConfig(Path("entrada.bin"), Path("recibido.bin"))
+    config = SimulationConfig(Path("entrada.txt"), Path("recibido.txt"))
     instances = (statistics, code, huffman, encoded, comparison, row,
                  report, config)
     for instance in instances:
         assert is_dataclass(instance)
         assert "Attributes:" in inspect.getdoc(type(instance))
-    assert statistics.counts == {0: 1, 255: 1}
+    assert statistics.counts == {'\x00': 1, 'ÿ': 1}
     assert huffman.statistics is code
     assert encoded.bits == "01"
-    assert row.symbol == 255
+    assert row.symbol == "ÿ"
     assert report.fixed_code_length == 8
     assert isinstance(config.input_file, Path)
 
@@ -116,7 +116,7 @@ def test_function_contracts(
     if contract[1] not in {
         "main", "load_config", "encode_source", "analyze_source",
         "decode_source", "build_huffman_code", "calculate_efficiency",
-        "read_file",
+        "read_file", "write_file", "compare_data",
     }
 ])
 def test_placeholders_are_explicit(
@@ -136,11 +136,11 @@ def test_placeholders_are_explicit(
         cada interfaz. No se espera ningún resultado algorítmico real.
     """
     samples = {
-        "data": b"\x00\xff", "probabilities": {0: 0.5, 255: 0.5},
+        "data": '\x00ÿ', "probabilities": {'\x00': 0.5, 'ÿ': 0.5},
         "entropy": 1.0, "average_length": 1.0,
-        "codebook": {0: "0", 255: "1"}, "encoded": EncodedSource("01"),
-        "path": Path("no_crear.bin"), "original": b"\x00\xff",
-        "received": b"\x00\xff",
+        "codebook": {'\x00': "0", 'ÿ': "1"}, "encoded": EncodedSource("01"),
+        "path": Path("no_crear.txt"), "original": '\x00ÿ',
+        "received": '\x00ÿ',
         "statistics": SourceStatistics({}, {}, 0, 0.0),
         "huffman": HuffmanResult({}, CodeStatistics(0, 0.0, 0.0, False)),
     }

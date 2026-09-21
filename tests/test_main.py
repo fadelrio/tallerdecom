@@ -9,16 +9,16 @@ from common.file_utils import read_file
 from config import SimulationConfig
 
 
-@pytest.mark.parametrize("data", [b"", b"\x00\xff\r\n"])
-def test_read_binary(tmp_path: Path, data: bytes) -> None:
+@pytest.mark.parametrize("data", ['', '\x00ÿ\r\n'])
+def test_read_text(tmp_path: Path, data: str) -> None:
     """Verifica lectura exacta sin transformaciones de texto.
 
     Args:
         tmp_path: Directorio temporal de pytest.
-        data: Contenido binario del archivo.
+        data: Contenido textual del archivo.
     """
-    path = tmp_path / "entrada.bin"
-    path.write_bytes(data)
+    path = tmp_path / "entrada.txt"
+    path.write_bytes(data.encode("utf-8"))
     assert read_file(path) == data
 
 
@@ -33,21 +33,21 @@ def test_empty_file_stops_before_huffman(
         monkeypatch: Sustitución temporal de configuración y Huffman.
         capsys: Captura de mensajes del principal.
     """
-    source = tmp_path / "entrada.bin"
-    output = tmp_path / "salida.bin"
-    source.write_bytes(b"")
-    output.write_bytes(b"conservar")
+    source = tmp_path / "entrada.txt"
+    output = tmp_path / "salida.txt"
+    source.write_text('')
+    output.write_text('conservar')
     monkeypatch.setattr(application, "load_config",
                         lambda: SimulationConfig(source, output))
 
-    def unexpected_huffman(probabilities: dict[int, float]) -> None:
+    def unexpected_huffman(probabilities: dict[str, float]) -> None:
         """Falla si el orquestador deja llegar una fuente vacía a Huffman."""
         pytest.fail("No debe llamarse a Huffman para un archivo vacío")
 
     monkeypatch.setattr(application, "build_huffman_code", unexpected_huffman)
     application.main()
     assert "Archivo vacío" in capsys.readouterr().out
-    assert output.read_bytes() == b"conservar"
+    assert output.read_text() == 'conservar'
 
 
 def test_nonempty_file_runs_transmitter(
@@ -61,11 +61,44 @@ def test_nonempty_file_runs_transmitter(
         monkeypatch: Sustitución temporal de las rutas configuradas.
         capsys: Captura de mensajes del principal.
     """
-    source = tmp_path / "entrada.bin"
-    output = tmp_path / "salida.bin"
-    source.write_bytes(b"\x00\xff\x00\n")
+    source = tmp_path / "entrada.txt"
+    output = tmp_path / "salida.txt"
+    source.write_text('\x00ÿ\x00\n')
     monkeypatch.setattr(application, "load_config",
                         lambda: SimulationConfig(source, output))
     application.main()
     assert "Fuente codificada: 6 bits" in capsys.readouterr().out
-    assert not output.exists()
+    assert read_file(output) == read_file(source)
+
+
+def test_utf8_file_round_trip(tmp_path: Path) -> None:
+    """Preserva BOM, acentos y CR/LF sin depender del sistema operativo.
+
+    Args:
+        tmp_path: Directorio temporal de pruebas.
+    """
+    from common.file_utils import write_file, compare_data
+
+    text = "\ufeffáñ\r\ntexto\rfin\n\t世界"
+    source = tmp_path / "entrada.txt"
+    output = tmp_path / "recibido.txt"
+    source.write_bytes(text.encode("utf-8"))
+    read = read_file(source)
+    assert read == text
+    write_file(output, read)
+    assert output.read_bytes() == source.read_bytes()
+    result = compare_data(text, read_file(output))
+    assert result.identical
+    assert result.original_size == len(text)
+
+
+def test_invalid_utf8(tmp_path: Path) -> None:
+    """No reemplaza silenciosamente caracteres de un archivo inválido.
+
+    Args:
+        tmp_path: Directorio temporal de pruebas.
+    """
+    source = tmp_path / "invalido.txt"
+    source.write_bytes(b"\xff")
+    with pytest.raises(UnicodeDecodeError):
+        read_file(source)

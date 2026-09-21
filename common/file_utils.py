@@ -1,52 +1,51 @@
-"""Contratos de entrada, salida y comparación; independientes de Huffman."""
+"""Lectura, escritura y comparación de texto UTF-8."""
 
 from pathlib import Path
 
 from common.data_types import FileComparison
 
 
-def read_file(path: Path) -> bytes:
-    """Lee el archivo de entrada en modo binario.
+def read_file(path: Path) -> str:
+    """Lee texto UTF-8 sin normalizar saltos de línea ni eliminar el BOM.
 
     Args:
-        path: Ruta del archivo que se leerá.
+        path: Ruta del archivo de texto.
 
     Returns:
-        Contenido completo como bytes, sin interpretación textual.
+        Texto completo, incluidos todos sus caracteres de control.
 
     Raises:
-        OSError: Si el archivo no existe o no puede leerse.
+        OSError: Si el archivo no puede leerse.
+        UnicodeDecodeError: Si el contenido no es UTF-8 válido.
     """
-    return path.read_bytes()
+    # newline='' preserva CR, LF y CRLF tal como aparecen en el archivo.
+    with path.open("r", encoding="utf-8", newline="") as file:
+        return file.read()
 
 
-def write_file(path: Path, data: bytes) -> None:
-    """Escribirá los bytes recibidos en modo binario.
+def write_file(path: Path, data: str) -> None:
+    """Escribe texto UTF-8 sin traducir saltos de línea.
 
     Args:
-        path: Ruta del archivo de destino.
-        data: Secuencia de bytes recibida.
+        path: Ruta de salida.
+        data: Texto recuperado por el receptor.
 
     Raises:
-        NotImplementedError: La escritura está pendiente.
-
-    Notes:
-        Este placeholder no crea ni modifica archivos.
+        OSError: Si el archivo no puede escribirse.
+        UnicodeEncodeError: Si el texto no puede representarse en UTF-8.
     """
-    raise NotImplementedError("Escritura binaria pendiente.")
+    with path.open("w", encoding="utf-8", newline="") as file:
+        file.write(data)
 
 
-def compare_data(original: bytes, received: bytes) -> FileComparison:
-    """Comparará los contenidos binarios original y recibido.
+def compare_data(original: str, received: str) -> FileComparison:
+    """Compara exactamente dos textos, sin normalizarlos.
 
     Args:
-        original: Bytes de entrada.
-        received: Bytes reconstruidos.
+        original: Texto de entrada.
+        received: Texto recuperado.
 
     Returns:
-        Igualdad exacta de contenidos y tamaño de cada secuencia en bytes.
-
-    Raises:
-        NotImplementedError: La comparación está pendiente.
+        Igualdad y longitudes en caracteres (puntos de código Unicode).
     """
-    raise NotImplementedError("Comparación de datos pendiente.")
+    return FileComparison(original == received, len(original), len(received))

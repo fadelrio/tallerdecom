@@ -1,272 +1,119 @@
 # Sistema de comunicaciones digitales
 
-Proyecto académico en Python para simular un sistema de comunicaciones
-digitales. Esta primera etapa contiene exclusivamente la arquitectura de los
-apartados **A (datos, control y estructura general)** y **B (fuente y Huffman)**.
-Están implementados el análisis de fuente, la entropía, Huffman y sus
-estadísticas, la eficiencia, la codificación por bloques y la decodificación.
-la escritura, la comparación y los datos del informe siguen pendientes.
-La lectura binaria y el transmisor están conectados al principal.
+Proyecto académico TA137: transmisión de un archivo de texto, según los
+apartados A/B de la consigna. Se procesa texto por caracteres, no por bytes
+UTF-8. Cada símbolo es un punto de código Unicode de Python `str`.
 
 ## Arquitectura
 
 ```text
-Fuente → Transmisor → Canal → Receptor → Archivo recibido
-
-Configuración
-  → Lectura binaria
-  → Análisis estadístico y entropía
-  → Construcción de Huffman y estadísticas del código
-  → Eficiencia
-  → Codificación de fuente
-  → [Futuro: codificación de canal y modulación]
-  → [Futuro: AWGN y respuesta impulsiva]
-  → [Futuro: demodulación y decodificación de canal]
-  → Decodificación de fuente
-  → Escritura binaria
-  → Comparación con el original
-  → Preparación de datos del informe B
+.txt UTF-8 → lectura → análisis de caracteres → Huffman → bits
+→ [futuro: codificación de canal, modulación, canal, demodulación]
+→ decodificación Huffman → texto → escritura .txt UTF-8 → comparación
 ```
 
-`main.py` carga la configuración y lee el archivo en modo binario. Si existe
-y no está vacío, ejecuta análisis, Huffman, eficiencia y codificación. Si no
-existe, muestra el recorrido conceptual. No llama a placeholders.
-`[PENDIENTE]` identifica funcionalidades de A/B; `[NO IMPLEMENTADO]` identifica
-etapas futuras, para las cuales todavía no existen módulos.
+Se conservan mayúsculas, acentos, espacios, controles, BOM y saltos CR/LF/CRLF.
+No se normaliza Unicode: `é` y `e` seguido de acento combinante son secuencias
+distintas. Un emoji compuesto puede contener varios puntos de código.
+La representación como bytes solo aparece al leer/escribir el archivo UTF-8.
 
-Las interfaces pendientes lanzan `NotImplementedError` si se invocan
-directamente. Así se evita confundir un resultado ficticio con una operación
-implementada. Al implementar cada módulo se conectará su interfaz en el
-orquestador y se actualizará ese contrato.
+## Estructura
 
-La fuente se representa como `bytes`: cada símbolo es un entero entre 0 y 255,
-incluidos controles y bytes no imprimibles. La futura E/S será binaria.
-No se decodifica texto. La presentación legible será una responsabilidad
-separada y no alterará los símbolos. Los bits Huffman se representarán como
-una cadena de `'0'` y `'1'` para facilitar su inspección académica.
+- `main.py`: lectura, rechazo controlado del vacío, transmisión de fuente,
+  recepción directa, escritura y comparación. Las etapas futuras son mensajes.
+- `config.py`: `SimulationConfig`, rutas `entrada.txt` y `recibido.txt` junto
+  al módulo; pueden editarse para elegir otros archivos.
+- `common/data_types.py`: dataclasses compartidas.
+- `common/file_utils.py`: lectura/escritura UTF-8 y comparación textual exacta.
+- `common/report_utils.py`: impresión de tablas; preparación estructurada del
+  informe todavía pendiente.
+- `transmitter/source_analysis.py`: conteos, probabilidades y entropía.
+- `transmitter/huffman.py`: árbol, código, estadísticas y eficiencia.
+- `transmitter/source_encoder.py`: codificación por bloques de 65536 caracteres.
+- `receiver/source_decoder.py`: reconstrucción de texto desde los bits.
+- `tests/`: pruebas automáticas; `pytest.ini` limita su recolección a esta carpeta.
+- `experiments/`: scripts manuales; `test_B.py` conserva su estilo original,
+  adaptado únicamente a claves de caracteres y resultado `str`.
+- `requirements.txt`: pytest; el programa usa la biblioteca estándar.
+- `ENTORNO.md`: preparación del entorno sin depender de ningún editor o agente.
+- Los `__init__.py` identifican paquetes; cada paquete tiene su propio README.
 
-## Estructura del proyecto
+## Contratos de fuente
 
-La carpeta actual es la raíz del proyecto (equivale a `proyecto/` en la consigna).
+`read_file(Path) -> str`, `analyze_source(str) -> SourceStatistics`,
+`build_huffman_code(dict[str, float]) -> HuffmanResult`,
+`encode_source(str, dict[str, str]) -> EncodedSource`,
+`decode_source(EncodedSource, dict[str, str]) -> str`,
+`write_file(Path, str) -> None` y `compare_data(str, str) -> FileComparison`.
 
-```text
-proyecto/
-├── main.py                       # Orquestación conceptual y estados
-├── config.py                     # SimulationConfig y rutas de ejemplo
-├── README.md                     # Documentación y estado real
-├── ENTORNO.md                    # Instalación del venv para colaboradores
-├── requirements.txt              # Dependencia de pruebas
-├── .gitignore                    # Cachés y entorno virtual local
-├── transmitter/
-│   ├── README.md                  # Responsabilidades y tareas pendientes
-│   ├── __init__.py                # Paquete del transmisor
-│   ├── source_analysis.py         # Análisis estadístico y entropía
-│   ├── huffman.py                 # Huffman, estadísticas y eficiencia
-│   └── source_encoder.py          # Codificación de fuente por bloques
-├── receiver/
-│   ├── README.md                  # Responsabilidades y tareas pendientes
-│   ├── __init__.py                # Paquete del receptor
-│   └── source_decoder.py          # Decodificación mediante árbol binario
-├── common/
-│   ├── README.md                  # Responsabilidades y tareas pendientes
-│   ├── __init__.py                # Paquete compartido
-│   ├── data_types.py              # Dataclasses sin cálculos
-│   ├── file_utils.py              # Contratos de E/S y comparación
-│   └── report_utils.py            # Contratos de datos del informe
-├── experiments/
-│   ├── __init__.py                # Paquete de experimentos manuales
-│   ├── test_B.py                  # Prueba manual original del transmisor
-│   └── README.md                  # Ejecución y nuevos experimentos
-└── tests/
-    ├── README.md                  # Cobertura actual y ampliaciones futuras
-    ├── __init__.py                # Paquete de pruebas
-    ├── test_source.py             # Imports, contratos y ejecución
-    ├── test_main.py               # Lectura y rechazo controlado
-    └── test_transmitter.py        # Codificación e integración de fuente
-```
+Los conteos, probabilidades y códigos usan caracteres como claves. Los tamaños
+se expresan en caracteres. `EncodedSource.bits` contiene la secuencia binaria;
+`list(encoded.iter_codewords(codebook))` permite obtener el vector de palabras
+por carácter solicitado en B.6, sin almacenarlo también durante la transmisión.
+La decodificación devuelve `str`, que ya se puede imprimir directamente.
 
-Las estructuras compartidas no dependen del transmisor ni del receptor.
-Las utilidades de archivos no conocen Huffman. El módulo de informes prepara
-datos científicos para una futura presentación, sin generar PDF ni Word.
-No se introducen dependencias circulares.
+La codificación limita la lista temporal por bloque, pero conserva toda la
+entrada y salida en memoria. No es streaming ni empaquetado de bits. No se
+hicieron mediciones de tiempo o memoria.
 
-Cada paquete tiene una guía de sus archivos y del trabajo por implementar:
-[common](common/README.md), [transmitter](transmitter/README.md),
-[receiver](receiver/README.md) y [tests](tests/README.md).
+## Métricas y referencia de 8 bits
 
-## Interfaces y estructuras
+`minimum_length: float` representa H(X), límite inferior teórico del promedio.
+No es la palabra más corta ni siempre es alcanzable por Huffman símbolo a
+símbolo. `average_length` es el promedio real; la eficiencia es H(X)/promedio.
+Para símbolo único se usa "0": entropía 0 y promedio 1.
 
-| Módulo | Interfaces públicas |
-| --- | --- |
-| `main` | `main() -> None` |
-| `config` | `SimulationConfig`, `load_config() -> SimulationConfig` |
-| `transmitter.source_analysis` | `analyze_source(data) -> SourceStatistics`, `calculate_entropy(probabilities) -> float` |
-| `transmitter.huffman` | `build_huffman_code(probabilities) -> HuffmanResult`, `calculate_efficiency(entropy, average_length) -> float` |
-| `transmitter.source_encoder` | `encode_source(data, codebook) -> EncodedSource` |
-| `receiver.source_decoder` | `decode_source(encoded, codebook) -> bytes` |
-| `common.file_utils` | `read_file(path) -> bytes`, `write_file(path, data) -> None`, `compare_data(original, received) -> FileComparison` |
-| `common.report_utils` | `build_source_table(statistics, huffman) -> list[SourceReport]`, `build_coding_report(statistics, huffman, encoded) -> CodingReport` |
+La referencia fija de la consigna es 8 bits por carácter, distinta del tamaño
+del archivo UTF-8. Solo es representable si todos los caracteres pertenecen a
+la tabla de 8 bits elegida. La consigna no identifica qué "ASCII extendido"
+utilizar: esa tabla debe acordarse antes de implementar `build_coding_report`.
+No se calculan aún métricas de referencia para Unicode arbitrario ni se
+reemplazan caracteres que no puedan representarse.
 
-`common.data_types` define:
-
-- `SourceStatistics`: conteos, probabilidades, total de símbolos y entropía.
-- `CodeStatistics`: largo promedio mínimo teórico H(X), promedio, varianza y propiedad de prefijo.
-- `HuffmanResult`: diccionario del código y sus estadísticas.
-- `EncodedSource`: cadena de bits.
-- `FileComparison`: igualdad y tamaños en bytes.
-- `SourceReport`: símbolo entero, cantidad, probabilidad y palabra Huffman.
-- `CodingReport`: entropía, longitudes, varianza, eficiencia, longitud fija
-  y totales de bits Huffman y fijo.
-
-Las dataclasses solo almacenan datos; no calculan ni validan sus atributos.
-La eficiencia se calcula como `H(X) / L_promedio`, una fracción adimensional.
-La referencia fija será de **8 bits por símbolo**. La conversión de eficiencia
-a porcentaje pertenecerá a la presentación. El análisis admite fuente vacía y símbolo único. Huffman rechaza el
-diccionario vacío y asigna "0" al símbolo único. El principal rechaza archivos vacíos con un mensaje antes de Huffman; ver el
-[README del transmisor](transmitter/README.md).
-
-## Estado del proyecto
+## Estado
 
 ### Apartado A
 
-- [x] Estructura general
-- [x] Configuración de ejemplo
-- [x] Programa principal con recorrido conceptual
-- [x] Arquitectura modular
-- [x] Lectura binaria del archivo
-- [x] Conexión del transmisor al orquestador
-- [ ] Conexión del receptor, escritura, comparación e informe
+- [x] Arquitectura, configuración y orquestador.
+- [x] Lectura y escritura textual UTF-8 sin traducción de saltos de línea.
+- [x] Rechazo controlado de archivo vacío y comparación textual.
 
 ### Apartado B
 
-- [x] Análisis estadístico y probabilidades
-- [x] Entropía
-- [x] Huffman
-- [x] Largo promedio mínimo teórico H(X)
-- [x] Longitud promedio
-- [x] Varianza
-- [x] Verificación de código prefijo
-- [x] Eficiencia
-- [x] Codificación de fuente por bloques
-- [x] Decodificación de fuente
-- [ ] Generación del archivo recibido
-- [ ] Comparación con el original
-- [ ] Datos para el informe y comparación con código fijo de 8 bits
+- [x] Análisis de caracteres, probabilidades y entropía.
+- [x] Huffman, mínimo promedio teórico, promedio, varianza y propiedad prefijo.
+- [x] Eficiencia, codificación, decodificación y archivo recibido.
+- [x] Acceso a palabras binarias por carácter e impresión de tablas.
+- [ ] Preparación estructurada de las tablas del informe.
+- [ ] Selección explícita de la tabla de referencia de 8 bits.
+- [ ] Completar validaciones de códigos malformados del decodificador.
 
 ### Etapas futuras
 
-- [ ] Codificación de canal
-- [ ] Modulación
-- [ ] Canal AWGN
-- [ ] Respuesta impulsiva
-- [ ] Demodulación
-- [ ] Decodificación de canal
+- [ ] Codificación y decodificación de canal.
+- [ ] Modulación y demodulación.
+- [ ] AWGN y respuesta impulsiva.
 
-Las marcas indican que existe implementación, no una validación exhaustiva.
-Quedan pendientes las funcionalidades no marcadas. La suite da
-**62 aprobadas, sin omisiones**.
-Ver [detalles de pruebas](tests/README.md).
+## Ejecución y tests
 
-## Ejecución
-
-Se requiere Python **3.10 o posterior** (compatible con las anotaciones usadas
-y la dependencia de pruebas). Desde la raíz del proyecto:
+Requiere Python 3.10 o posterior. Ver [ENTORNO.md](ENTORNO.md).
 
 ```bash
-python3 main.py
+python main.py
+python -m pytest -q -rs
+python -m experiments.test_B
 ```
 
-No es necesario instalar dependencias para ejecutar el programa principal.
-Sin archivo se muestra el recorrido conceptual. Con un archivo no vacío se
-lee y codifica la fuente; todavía no se escribe un archivo recibido. Una
-entrada vacía se rechaza sin traceback y sin modificar la salida.
-`load_config()` devuelve las rutas `entrada.bin` y `recibido.bin` junto a
-`config.py`, independientemente del directorio desde el cual se ejecute.
-Estas rutas de ejemplo pueden editarse en `config.py`.
+Si no existe la entrada, el principal muestra el recorrido conceptual. Si está
+vacía o no es UTF-8 válido, muestra un error y no escribe salida. No permite
+que las rutas resueltas de entrada y salida sean iguales. La salida configurada
+se sobrescribe cuando la ejecución es válida.
 
-## Dependencias y tests
+Las pruebas verifican contratos, Unicode, acentos, controles, bloques, errores,
+ida y vuelta y E/S textual. Los experimentos manuales se documentan en
+[experiments/README.md](experiments/README.md).
 
-Consultar [Preparación del entorno para colaboradores](ENTORNO.md) para crear
-el entorno en Linux, macOS o Windows, configurar el editor y resolver problemas
-como `No module named pip`. La guía no requiere Codex.
+## Mantenimiento
 
-El código del sistema usa exclusivamente la biblioteca estándar de Python.
-`pytest` es la única dependencia externa y se utiliza para pruebas. No se
-utiliza NumPy.
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python -m pytest
-```
-
-Las pruebas verifican imports, instanciación y documentación de dataclasses,
-firmas y anotaciones de funciones, la excepción explícita de los placeholders,
-la configuración y la ejecución de `main.py` en un proceso independiente.
-Se usan datos manuales de ejemplo, incluidos símbolos 0 y 255. Las pruebas
-del codificador ya verifican su comportamiento real; las integraciones con
-análisis, Huffman y decodificación se omiten mientras estén pendientes.
-Al implementar cada interfaz se deben reemplazar sus pruebas de
-`NotImplementedError` por pruebas de comportamiento real y casos límite.
-
-## Relación con la consigna
-
-- **A:** `config.py` define datos de control; `main.py` muestra el flujo;
-  los paquetes separan las responsabilidades; `file_utils.py` define las
-  interfaces para lectura, escritura y comparación binarias.
-- **B:** `source_analysis.py` define análisis y entropía; `huffman.py` define
-  construcción y estadísticas; `source_encoder.py` y `source_decoder.py`
-  definen la transformación reversible futura. `data_types.py` establece
-  los resultados compartidos y `report_utils.py` las tablas y métricas
-  requeridas para el informe.
-
-## Mantenimiento del README
-
-Cada implementación posterior debe actualizar su estado aquí, ajustar la
-arquitectura y estructura si cambian, revisar las instrucciones de ejecución
-y actualizar o documentar las pruebas correspondientes. También debe conectar
-la etapa en `main.py` cuando sus dependencias estén disponibles. Una interfaz
-que solo contiene un placeholder debe seguir marcada como pendiente.
-
-## Codificación por bloques y pruebas de integración
-
-`encode_source` procesa bloques de 64 KiB, concatena las palabras de cada
-bloque y finalmente une los fragmentos. Devuelve una cadena vacía para una
-fuente vacía y lanza `ValueError` si un byte no tiene código. Asume palabras
-binarias no vacías y un código prefijo válido provisto por Huffman.
-
-La lista temporal está acotada por bloque, pero la entrada y toda la salida
-siguen en memoria; los fragmentos y la cadena final pueden coexistir. No es
-streaming ni almacenamiento de bits empaquetados. No se realizaron benchmarks
-de tiempo o memoria.
-
-`tests/test_transmitter.py` prueba resultados conocidos, símbolos 0..255,
-entrada vacía, límites de bloque y símbolos sin código. Incluye pruebas de
-análisis con código manual, ida y vuelta con código manual, transmisor completo
-y recorrido completo de fuente. Las llamadas a módulos todavía pendientes se
-omiten con `pytest.skip` solo si lanzan `NotImplementedError`; los demás errores
-fallan normalmente. Al implementar esos módulos, sus pruebas se ejecutarán
-sin modificar la selección. Ejecutar `python -m pytest -q -rs` para ver motivos
-de omisión. Una prueba omitida no cuenta como funcionalidad verificada.
-
-## Interpretación de la longitud mínima
-
-`minimum_length` es un `float` que representa H(X), el límite inferior
-teórico del largo promedio en bits por símbolo. No representa la palabra
-más corta. El promedio real está en `average_length`: para probabilidades
-no diádicas, Huffman símbolo a símbolo puede quedar por encima de H(X).
-Para un único símbolo, H(X) es 0 y la palabra elegida "0" mide 1 bit.
-
-## Experimentos y presentación
-
-Las demostraciones manuales están en [experiments](experiments/README.md).
-`tests/test_B.py` se trasladó a `experiments/test_B.py` conservando exactamente
-su contenido original. Se ejecuta manualmente desde la raíz y usa
-`textito.txt`. `pytest.ini` limita la recolección automática a `tests/`. `print_source` y `print_huffman` muestran tablas en consola;
-`build_source_table` y `build_coding_report` siguen pendientes.
-
-El receptor está implementado y probado con códigos válidos. Falta conectarlo
-al principal, que todavía lo muestra como pendiente. Su validación de códigos
-malformados es incompleta; ver [receiver](receiver/README.md). No se cambió
-su algoritmo en esta actualización documental.
+Actualizar código, pruebas, docstrings y README juntos. No marcar como
+implementadas interfaces que solo lanzan `NotImplementedError`.

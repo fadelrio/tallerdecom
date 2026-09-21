@@ -1,7 +1,8 @@
 """Orquestación del transmisor y presentación de las etapas pendientes."""
 
 from config import load_config
-from common.file_utils import read_file
+from common.file_utils import read_file, write_file, compare_data
+from receiver.source_decoder import decode_source
 from transmitter.source_analysis import analyze_source
 from transmitter.huffman import build_huffman_code, calculate_efficiency
 from transmitter.source_encoder import encode_source
@@ -13,7 +14,7 @@ def main() -> None:
     Notes:
         Rechaza archivos vacíos antes de Huffman y controla errores de E/S.
         Si el archivo no existe, muestra el recorrido conceptual.
-        No invoca el receptor ni las otras interfaces pendientes.
+        Conecta el receptor directamente, sin simular canal ni ruido.
     """
     print("=" * 60)
     print(" SISTEMA DE COMUNICACIONES DIGITALES")
@@ -28,14 +29,14 @@ def main() -> None:
     except FileNotFoundError:
         print("[FILE] Archivo no encontrado; recorrido conceptual.")
         data = None
-    except OSError as error:
+    except (OSError, UnicodeError) as error:
         print(f"[ERROR] No se pudo leer el archivo: {error}")
         return
 
     # Rechazamos el vacío antes de construir Huffman. No se genera salida
     # ni se presenta como exitosa una transmisión que no se realizó.
-    if data == b"":
-        print("[ERROR] Archivo vacío: se requiere al menos un byte.")
+    if data == "":
+        print("[ERROR] Archivo vacío: se requiere al menos un carácter.")
         return
 
     if data is not None:
@@ -47,6 +48,18 @@ def main() -> None:
         encoded = encode_source(data, huffman.codebook)
         print(f"[SOURCE] Fuente codificada: {len(encoded.bits)} bits.")
         print(f"[SOURCE] Eficiencia: {efficiency:.4f}")
+        received = decode_source(encoded, huffman.codebook)
+        # Evitar sobrescribir el archivo original con la salida del sistema.
+        if config.input_file.resolve() == config.output_file.resolve():
+            print("[ERROR] Entrada y salida deben ser archivos distintos.")
+            return
+        try:
+            write_file(config.output_file, received)
+        except (OSError, UnicodeError) as error:
+            print(f"[ERROR] No se pudo escribir la salida: {error}")
+            return
+        comparison = compare_data(data, received)
+        print(f"[RESULTADO] Texto idéntico: {comparison.identical}")
     print("\n[TRANSMISOR]")
     print("[SOURCE] Análisis estadístico y entropía        [DISPONIBLE]")
     print("[SOURCE] Construcción del código Huffman        [DISPONIBLE]")
@@ -62,10 +75,10 @@ def main() -> None:
     print("\n[RECEPTOR]")
     print("[CHANNEL] Demodulación                          [NO IMPLEMENTADO]")
     print("[CHANNEL] Decodificación de canal               [NO IMPLEMENTADO]")
-    print("[SOURCE] Decodificación de fuente               [PENDIENTE]")
+    print("[SOURCE] Decodificación de fuente               [DISPONIBLE]")
     print("\n[RESULTADO]")
-    print("[FILE] Escritura del archivo recibido          [PENDIENTE]")
-    print("[FILE] Comparación con el original             [PENDIENTE]")
+    print("[FILE] Escritura del archivo recibido          [DISPONIBLE]")
+    print("[FILE] Comparación con el original             [DISPONIBLE]")
     print("[REPORT] Tabla de símbolos y métricas           [PENDIENTE]")
     print("\n[PENDIENTE]: funcionalidad de A/B aún sin implementar.")
     print("[NO IMPLEMENTADO]: etapa futura de la consigna.")

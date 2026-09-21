@@ -20,14 +20,14 @@ def build_source_table(
         huffman: Código Huffman de los símbolos observados.
 
     Returns:
-        Una fila por símbolo con su entero 0..255, cantidad, probabilidad
+        Una fila por símbolo con su carácter Unicode, cantidad, probabilidad
         y palabra Huffman.
 
     Raises:
         NotImplementedError: La preparación de la tabla está pendiente.
 
     Notes:
-        La representación legible de bytes de control corresponde a una
+        La representación legible de caracteres de control corresponde a una
         futura capa de presentación; no modifica los símbolos internos.
     """
     raise NotImplementedError("Tabla de símbolos pendiente.")
@@ -60,106 +60,29 @@ def build_coding_report(
     raise NotImplementedError("Datos comparativos del informe pendientes.")
 
 def print_source(stats: SourceStatistics) -> None:
-    """Imprime de forma legible las estadísticas de una fuente analizada.
-
-    Los símbolos se muestran en orden de probabilidad decreciente. Ante
-    igualdad de probabilidad, se ordenan por valor de símbolo ascendente.
+    """Imprime conteos y probabilidades por carácter.
 
     Args:
-        stats: Resultado de analyze_source (SourceStatistics), con conteos,
-            probabilidades, total de símbolos y entropía.
-
-    Notes:
-        Cada símbolo es un byte (entero 0-255), como define el contrato de
-        analyze_source. Se interpreta como carácter ASCII/UTF-8 cuando es
-        imprimible; los caracteres de control reciben un nombre legible
-        (ESPACIO, SALTO DE LÍNEA, etc.) y los bytes fuera del rango ASCII
-        imprimible se muestran en hexadecimal, porque un byte suelto puede
-        ser parte de una secuencia UTF-8 multibyte y no representar un
-        carácter completo por sí solo.
+        stats: Estadísticas de la fuente textual.
     """
-    control_names = {
-        0: "NULO",
-        9: "TAB",
-        10: "SALTO DE LÍNEA (\\n)",
-        13: "RETORNO DE CARRO (\\r)",
-        27: "ESC",
-        32: "ESPACIO",
-    }
+    print("Carácter | Cantidad | Probabilidad")
+    for symbol in sorted(stats.counts):
+        print(f"{symbol!r} | {stats.counts[symbol]} | "
+              f"{stats.probabilities[symbol]:.4f}")
+    print(f"Total de caracteres: {stats.total_symbols}")
+    print(f"Entropía: {stats.entropy:.4f} bits/carácter")
 
-    print(f"{'Símbolo':<8}{'Carácter':<24}{'Cantidad':<10}{'Probabilidad':<14}")
-    print("-" * 56)
-
-    ordered_symbols = sorted(
-        stats.probabilities,
-        key=lambda symbol: (-stats.probabilities[symbol], symbol),
-    )
-
-    for symbol in ordered_symbols:
-        count = stats.counts[symbol]
-        probability = stats.probabilities[symbol]
-
-        if symbol in control_names:
-            char_repr = control_names[symbol]
-        elif 33 <= symbol <= 126:
-            char_repr = f"'{chr(symbol)}'"
-        else:
-            char_repr = f"\\x{symbol:02x}"
-
-        print(f"{symbol:<8}{char_repr:<24}{count:<10}{probability:<14.4f}")
-
-    print("-" * 56)
-    print(f"Total de símbolos: {stats.total_symbols}")
-    print(f"Entropía: {stats.entropy:.4f} bits/símbolo")
 
 def print_huffman(result: HuffmanResult) -> None:
-    """Imprime de forma legible el código Huffman y sus estadísticas.
+    """Imprime palabras Huffman y métricas, escapando controles.
 
     Args:
-        result: HuffmanResult devuelto por build_huffman_code: contiene
-            el codebook (símbolo -> palabra binaria) y sus CodeStatistics
-            (longitud mínima, promedio, varianza, propiedad de prefijo).
-
-    Notes:
-        Cada símbolo es un byte (entero 0-255), consistente con el criterio
-        de print_source: no se intenta reconstruir caracteres especiales
-        a partir de bytes UTF-8 combinados, cada byte se muestra como su
-        propio símbolo.
-
-        Ordena los símbolos por longitud de palabra (más cortas primero)
-        y, dentro de la misma longitud, por símbolo. Así se ve de un
-        vistazo el principio central de Huffman: los símbolos más
-        frecuentes deberían tener las palabras más cortas.
+        result: Código y estadísticas calculadas.
     """
-    control_names = {
-        0: "NULO",
-        9: "TAB",
-        10: "SALTO DE LÍNEA (\\n)",
-        13: "RETORNO DE CARRO (\\r)",
-        27: "ESC",
-        32: "ESPACIO",
-    }
-
-    codebook = result.codebook
+    for symbol, word in sorted(result.codebook.items()):
+        print(f"{symbol!r}: {word}")
     stats = result.statistics
-
-    print(f"{'Símbolo':<8}{'Carácter':<24}{'Código':<14}{'Long.':<6}")
-    print("-" * 52)
-
-    for symbol in sorted(codebook, key=lambda s: (len(codebook[s]), s)):
-        code = codebook[symbol]
-
-        if symbol in control_names:
-            char_repr = control_names[symbol]
-        elif 33 <= symbol <= 126:
-            char_repr = f"'{chr(symbol)}'"
-        else:
-            char_repr = f"\\x{symbol:02x}"
-
-        print(f"{symbol:<8}{char_repr:<24}{code:<14}{len(code):<6}")
-
-    print("-" * 52)
-    print(f"Largo promedio mínimo teórico H(X): {stats.minimum_length} bits/símbolo")
-    print(f"Longitud promedio: {stats.average_length:.4f} bits/símbolo")
-    print(f"Varianza: {stats.variance:.4f} bits²")
-    print(f"¿Es código prefijo?: {'Sí' if stats.is_prefix_code else 'No'}")
+    print(f"Largo promedio mínimo teórico: {stats.minimum_length}")
+    print(f"Largo promedio: {stats.average_length}")
+    print(f"Varianza: {stats.variance}")
+    print(f"Código prefijo: {stats.is_prefix_code}")

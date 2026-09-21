@@ -6,12 +6,11 @@ from collections import Counter
 from common.data_types import SourceStatistics
 
 
-def calculate_entropy(probabilities: dict[int, float]) -> float:
+def calculate_entropy(probabilities: dict[str, float]) -> float:
     """Calcula la entropía H(X) del texto a partir de sus probabilidades.
 
     Args:
-        probabilities: Probabilidad de ocurrencia de cada símbolo entero
-            (0..255), ya calculadas sobre el texto ingresado.
+        probabilities: Probabilidad de ocurrencia de cada carácter Unicode, ya calculadas sobre el texto ingresado.
 
     Returns:
         Entropía en bits por símbolo: H(X) = -sum(p_i * log2(p_i)).
@@ -35,8 +34,8 @@ def calculate_entropy(probabilities: dict[int, float]) -> float:
     return -sum(p * math.log2(p) for p in probabilities.values() if p > 0)
 
 
-def analyze_source(data: bytes) -> SourceStatistics:
-    """Analiza estadísticamente una fuente binaria.
+def analyze_source(data: str) -> SourceStatistics:
+    """Analiza estadísticamente una fuente textual.
 
     Args:
         data: Bytes del archivo de entrada, incluidos los no imprimibles.
@@ -45,8 +44,8 @@ def analyze_source(data: bytes) -> SourceStatistics:
         Conteos, probabilidades, cantidad total y entropía en bits por símbolo.
 
     Notes:
-        Recorre los bytes una sola vez con `collections.Counter`, que ya
-        trata cada byte como un entero 0..255 (letras, dígitos, caracteres
+        Recorre los caracteres una sola vez con `collections.Counter`, que
+        trata cada punto de código Unicode como un símbolo (letras, dígitos, caracteres
         especiales y de control quedan cubiertos por igual, sin distinción
         de categoría). Las probabilidades se calculan como frecuencia
         relativa (conteo / total) y la entropía se delega a
