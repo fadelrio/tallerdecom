@@ -132,6 +132,8 @@ class CodingReport:
         fixed_code_length: Longitud fija de referencia: 8 bits por símbolo.
         huffman_total_bits: Cantidad de bits de la secuencia codificada.
         fixed_total_bits: Cantidad de símbolos multiplicada por 8 bits.
+        fixed_encoding: Tabla de referencia de un byte por carácter.
+        fixed_representable: Si todos los caracteres caben en esa tabla.
     """
 
     entropy: float
@@ -142,3 +144,5 @@ class CodingReport:
     fixed_code_length: int
     huffman_total_bits: int
     fixed_total_bits: int
+    fixed_encoding: str = "cp1252"
+    fixed_representable: bool = True

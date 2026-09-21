@@ -13,6 +13,6 @@
 - `README.md`: documentación del transmisor.
 
 Todos estos módulos están implementados y conectados al principal. No hacen
-E/S ni normalizan texto. Las tablas de informe y etapas de canal son posteriores.
+E/S ni normalizan texto. Las tablas del informe se preparan en common; las etapas de canal son posteriores.
 El vector de palabras por carácter se obtiene con
 `list(encoded.iter_codewords(huffman.codebook))`. Se materializa solo a pedido.

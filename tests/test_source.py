@@ -2,8 +2,6 @@
 
 import importlib
 import inspect
-import subprocess
-import sys
 from dataclasses import is_dataclass
 from pathlib import Path
 from typing import get_type_hints
@@ -111,45 +109,6 @@ def test_function_contracts(
     assert inspect.getdoc(function)
 
 
-@pytest.mark.parametrize("module_name, name, expected", [
-    contract for contract in CONTRACTS
-    if contract[1] not in {
-        "main", "load_config", "encode_source", "analyze_source",
-        "decode_source", "build_huffman_code", "calculate_efficiency",
-        "read_file", "write_file", "compare_data",
-    }
-])
-def test_placeholders_are_explicit(
-    module_name: str,
-    name: str,
-    expected: dict[str, object],
-) -> None:
-    """Comprueba el contrato temporal de funcionalidades pendientes.
-
-    Args:
-        module_name: Módulo del placeholder.
-        name: Nombre de la función pendiente.
-        expected: Interfaz usada para suministrar argumentos de ejemplo.
-
-    Notes:
-        Reemplazar estas pruebas por pruebas funcionales al implementar
-        cada interfaz. No se espera ningún resultado algorítmico real.
-    """
-    samples = {
-        "data": '\x00ÿ', "probabilities": {'\x00': 0.5, 'ÿ': 0.5},
-        "entropy": 1.0, "average_length": 1.0,
-        "codebook": {'\x00': "0", 'ÿ': "1"}, "encoded": EncodedSource("01"),
-        "path": Path("no_crear.txt"), "original": '\x00ÿ',
-        "received": '\x00ÿ',
-        "statistics": SourceStatistics({}, {}, 0, 0.0),
-        "huffman": HuffmanResult({}, CodeStatistics(0, 0.0, 0.0, False)),
-    }
-    function = getattr(importlib.import_module(module_name), name)
-    arguments = {key: samples[key] for key in expected if key != "return"}
-    with pytest.raises(NotImplementedError):
-        function(**arguments)
-
-
 def test_config_paths() -> None:
     """Verifica que la configuración devuelva rutas Path independientes."""
     config = load_config()
@@ -158,27 +117,24 @@ def test_config_paths() -> None:
     assert config.input_file != config.output_file
 
 
-def test_main_runs_without_input_file(tmp_path: Path) -> None:
-    """Ejecuta el programa sin archivos y verifica estados y ausencia de E/S.
+def test_main_runs_without_input_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Comprueba el error controlado sin archivos reales del usuario.
 
     Args:
-        tmp_path: Directorio temporal provisto por pytest.
+        tmp_path: Directorio temporal.
+        monkeypatch: Sustitución de configuración.
+        capsys: Captura de salida.
     """
-    root = Path(__file__).resolve().parents[1]
-    result = subprocess.run(
-        [sys.executable, str(root / "main.py")],
-        cwd=tmp_path,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert result.returncode == 0, result.stderr
-    assert result.stderr == ""
-    for section in ("[CONFIG]", "[TRANSMISOR]", "[CANAL]", "[RECEPTOR]",
-                    "[RESULTADO]"):
-        assert section in result.stdout
-    assert "[PENDIENTE]" in result.stdout
-    assert "[NO IMPLEMENTADO]" in result.stdout
-    assert "Demodulación" in result.stdout
-    assert "Comparación" in result.stdout
+    import main as application
+
+    monkeypatch.setattr(application, "load_config", lambda: SimulationConfig(
+        tmp_path / "ausente.txt", tmp_path / "salida.txt",
+    ))
+    application.main()
+    output = capsys.readouterr().out
+    assert "[ERROR] No se pudo leer" in output
+    assert "AWGN" not in output
     assert list(tmp_path.iterdir()) == []

@@ -63,11 +63,15 @@ def test_nonempty_file_runs_transmitter(
     """
     source = tmp_path / "entrada.txt"
     output = tmp_path / "salida.txt"
-    source.write_text('\x00ÿ\x00\n')
+    source.write_text('\x00ÿ\x00\n', encoding='utf-8')
     monkeypatch.setattr(application, "load_config",
                         lambda: SimulationConfig(source, output))
     application.main()
-    assert "Fuente codificada: 6 bits" in capsys.readouterr().out
+    output_text = capsys.readouterr().out
+    assert "Fuente codificada: 6 bits" in output_text
+    assert "6. COMPARACIÓN DE ARCHIVOS" in output_text
+    assert "Texto idéntico: True" in output_text
+    assert "AWGN" not in output_text
     assert read_file(output) == read_file(source)
 
 
@@ -102,3 +106,31 @@ def test_invalid_utf8(tmp_path: Path) -> None:
     source.write_bytes(b"\xff")
     with pytest.raises(UnicodeDecodeError):
         read_file(source)
+
+
+@pytest.mark.parametrize("filename", ["texto propio.txt", "pg12345.txt"])
+def test_cli_local_sources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str], filename: str,
+) -> None:
+    """Procesa archivos seleccionados sin depender de Internet.
+
+    Args:
+        tmp_path: Directorio temporal.
+        monkeypatch: Sustituye argumentos de terminal.
+        capsys: Captura las tablas impresas.
+        filename: Nombre propio o con el estilo de una descarga Gutenberg.
+    """
+    import sys
+
+    source = tmp_path / filename
+    output = tmp_path / "recibido.txt"
+    # Encabezado y controles se conservan; no se limpia la obra implícitamente.
+    text = "*** START OF THE PROJECT GUTENBERG EBOOK ***\r\nEspaña\r\n"
+    source.write_bytes(text.encode("utf-8"))
+    monkeypatch.setattr(sys, "argv", [
+        "main.py", "--input", str(source), "--output", str(output),
+    ])
+    application.cli()
+    assert output.read_bytes() == source.read_bytes()
+    assert "Texto idéntico: True" in capsys.readouterr().out

@@ -7,9 +7,9 @@
   `EncodedSource.iter_codewords` expone las palabras binarias en orden.
 - `file_utils.py`: lee y escribe UTF-8 con `newline=''` y compara textos sin
   normalización. No conoce Huffman. Implementado.
-- `report_utils.py`: `print_source` y `print_huffman` imprimen caracteres y
-  controles con representación escapada. `build_source_table` y
-  `build_coding_report` siguen pendientes: preparar filas y métricas científicas,
-  manteniendo separada su presentación. Acordar una tabla de 8 bits antes de
-  calcular la referencia fija; rechazar caracteres no representables.
+- `report_utils.py`: `build_source_table` prepara filas por carácter;
+  `build_coding_report` calcula métricas y totales con referencia Windows-1252.
+  `format_source_report` devuelve Markdown con las seis secciones de datos del apartado B.
+  `print_source` y `print_huffman` siguen disponibles para pruebas manuales.
+  Para caracteres fuera de Windows-1252 se indica que la referencia no es aplicable.
 - `README.md`: contratos y estado del paquete.

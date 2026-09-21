@@ -1,88 +1,89 @@
-"""Orquestación del transmisor y presentación de las etapas pendientes."""
+"""Flujo directo de fuente y datos del apartado B."""
 
-from config import load_config
-from common.file_utils import read_file, write_file, compare_data
+from common.file_utils import compare_data, read_file, write_file
+from common.report_utils import format_source_report
+from config import SimulationConfig, load_config
+from pathlib import Path
+import argparse
+from html import escape
 from receiver.source_decoder import decode_source
+from transmitter.huffman import build_huffman_code
 from transmitter.source_analysis import analyze_source
-from transmitter.huffman import build_huffman_code, calculate_efficiency
 from transmitter.source_encoder import encode_source
 
 
 def main() -> None:
-    """Carga la fuente y ejecuta el transmisor cuando hay un archivo válido.
+    """Ejecuta archivo → Huffman → decodificación → archivo e imprime datos.
 
     Notes:
-        Rechaza archivos vacíos antes de Huffman y controla errores de E/S.
-        Si el archivo no existe, muestra el recorrido conceptual.
-        Conecta el receptor directamente, sin simular canal ni ruido.
+        Usa las rutas de load_config. Controla errores de E/S y entrada vacía.
+        La salida del codificador entra directamente al decodificador.
+        Relee la salida escrita antes de compararla con el original.
     """
-    print("=" * 60)
-    print(" SISTEMA DE COMUNICACIONES DIGITALES")
-    print("=" * 60)
-    print("\n[CONFIG] Cargando configuración...")
-    config = load_config()
-    print(f"[FILE] Archivo de entrada: {config.input_file}")
-    print(f"[FILE] Archivo de salida: {config.output_file}")
-    # Sin archivo se conserva el recorrido conceptual del proyecto.
+    run_simulation(load_config())
+
+
+def run_simulation(config: SimulationConfig) -> None:
+    """Procesa un TXT local propio o descargado, sin alterar su contenido.
+
+    Args:
+        config: Rutas del archivo de entrada UTF-8 y de salida.
+    """
+    print("# SISTEMA DE COMUNICACIONES — APARTADO B\n")
+    print(f"- Entrada: <code>{escape(str(config.input_file))}</code>")
+    print(f"- Salida: <code>{escape(str(config.output_file))}</code>\n")
+    if config.input_file.resolve() == config.output_file.resolve():
+        print("[ERROR] Entrada y salida deben ser archivos distintos.")
+        return
     try:
         data = read_file(config.input_file)
-    except FileNotFoundError:
-        print("[FILE] Archivo no encontrado; recorrido conceptual.")
-        data = None
     except (OSError, UnicodeError) as error:
         print(f"[ERROR] No se pudo leer el archivo: {error}")
         return
-
-    # Rechazamos el vacío antes de construir Huffman. No se genera salida
-    # ni se presenta como exitosa una transmisión que no se realizó.
-    if data == "":
+    if not data:
         print("[ERROR] Archivo vacío: se requiere al menos un carácter.")
         return
 
-    if data is not None:
-        statistics = analyze_source(data)
-        huffman = build_huffman_code(statistics.probabilities)
-        efficiency = calculate_efficiency(
-            statistics.entropy, huffman.statistics.average_length
-        )
-        encoded = encode_source(data, huffman.codebook)
-        print(f"[SOURCE] Fuente codificada: {len(encoded.bits)} bits.")
-        print(f"[SOURCE] Eficiencia: {efficiency:.4f}")
-        received = decode_source(encoded, huffman.codebook)
-        # Evitar sobrescribir el archivo original con la salida del sistema.
-        if config.input_file.resolve() == config.output_file.resolve():
-            print("[ERROR] Entrada y salida deben ser archivos distintos.")
-            return
-        try:
-            write_file(config.output_file, received)
-        except (OSError, UnicodeError) as error:
-            print(f"[ERROR] No se pudo escribir la salida: {error}")
-            return
-        comparison = compare_data(data, received)
-        print(f"[RESULTADO] Texto idéntico: {comparison.identical}")
-    print("\n[TRANSMISOR]")
-    print("[SOURCE] Análisis estadístico y entropía        [DISPONIBLE]")
-    print("[SOURCE] Construcción del código Huffman        [DISPONIBLE]")
-    print("[SOURCE] Estadísticas del código y eficiencia   [DISPONIBLE]")
-    print(
-        "[SOURCE] Codificación por bloques               [DISPONIBLE]"
+    statistics = analyze_source(data)
+    huffman = build_huffman_code(statistics.probabilities)
+    encoded = encode_source(data, huffman.codebook)
+    print(f"Fuente codificada: {len(encoded.bits)} bits\n")
+    # Conexión directa: no hay operaciones de canal entre ambos bloques.
+    received = decode_source(encoded, huffman.codebook)
+    try:
+        write_file(config.output_file, received)
+        saved = read_file(config.output_file)
+    except (OSError, UnicodeError) as error:
+        print(f"[ERROR] No se pudo escribir o releer la salida: {error}")
+        return
+    comparison = compare_data(data, saved)
+    print(format_source_report(
+        data, saved, statistics, huffman, encoded, comparison,
+    ))
+
+
+def cli() -> None:
+    """Selecciona archivos desde la terminal y ejecuta la simulación.
+
+    Notes:
+        Sin argumentos se usan las rutas de config.py. Los archivos de
+        Gutenberg deben estar descargados en formato texto UTF-8.
+    """
+    defaults = load_config()
+    parser = argparse.ArgumentParser(
+        description="Simulación de fuente con TXT propios o de Gutenberg.",
     )
-    print("[CHANNEL] Codificación de canal                 [NO IMPLEMENTADO]")
-    print("[CHANNEL] Modulación                            [NO IMPLEMENTADO]")
-    print("\n[CANAL]")
-    print("[CHANNEL] AWGN                                  [NO IMPLEMENTADO]")
-    print("[CHANNEL] Respuesta impulsiva                   [NO IMPLEMENTADO]")
-    print("\n[RECEPTOR]")
-    print("[CHANNEL] Demodulación                          [NO IMPLEMENTADO]")
-    print("[CHANNEL] Decodificación de canal               [NO IMPLEMENTADO]")
-    print("[SOURCE] Decodificación de fuente               [DISPONIBLE]")
-    print("\n[RESULTADO]")
-    print("[FILE] Escritura del archivo recibido          [DISPONIBLE]")
-    print("[FILE] Comparación con el original             [DISPONIBLE]")
-    print("[REPORT] Tabla de símbolos y métricas           [PENDIENTE]")
-    print("\n[PENDIENTE]: funcionalidad de A/B aún sin implementar.")
-    print("[NO IMPLEMENTADO]: etapa futura de la consigna.")
+    parser.add_argument(
+        "--input", type=Path, default=defaults.input_file,
+        help="TXT UTF-8 local, propio o descargado de Gutenberg",
+    )
+    parser.add_argument(
+        "--output", type=Path, default=defaults.output_file,
+        help="Archivo recibido (se sobrescribe si existe)",
+    )
+    args = parser.parse_args()
+    run_simulation(SimulationConfig(args.input, args.output))
 
 
 if __name__ == "__main__":
-    main()
+    cli()
