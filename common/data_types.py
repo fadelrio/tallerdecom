@@ -134,6 +134,7 @@ class CodingReport:
         fixed_total_bits: Cantidad de símbolos multiplicada por 8 bits.
         fixed_encoding: Tabla de referencia de un byte por carácter.
         fixed_representable: Si todos los caracteres caben en esa tabla.
+        K_McM: Suma de Kraft - McMillan. Suma de 2^(-longitud) para cada palabra del código Huffman.
     """
 
     entropy: float
@@ -146,3 +147,4 @@ class CodingReport:
     fixed_total_bits: int
     fixed_encoding: str = "cp1252"
     fixed_representable: bool = True
+    K_McM: float = 0.0

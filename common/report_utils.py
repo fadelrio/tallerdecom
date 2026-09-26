@@ -2,6 +2,7 @@
 
 from html import escape
 import re
+import numpy as np
 
 from transmitter.huffman import calculate_efficiency
 from receiver.source_decoder import decode_source
@@ -75,6 +76,8 @@ def build_coding_report(
     """
     representable = all(_fits_fixed_code(symbol) for symbol in statistics.counts)
     code = huffman.statistics
+    longitudes = np.array([len(codigo) for codigo in huffman.codebook.values()], dtype=float)
+    K_McM = np.sum(2**(-longitudes))
     return CodingReport(
         entropy=statistics.entropy,
         minimum_length=code.minimum_length,
@@ -85,6 +88,7 @@ def build_coding_report(
         huffman_total_bits=len(encoded.bits),
         fixed_total_bits=8 * statistics.total_symbols,
         fixed_representable=representable,
+        K_McM=K_McM,
     )
 
 def print_source(stats: SourceStatistics) -> None:
@@ -196,6 +200,7 @@ def format_source_report(
         f"| Eficiencia | {report.efficiency:.12g} | fracción |",
         f"| Eficiencia | {report.efficiency * 100:.12g} | % |",
         f"| Longitud fija | {report.fixed_code_length} | bits/carácter |",
+        f"| Suma de Kraft-McMillan | {report.K_McM:.12g} | fracción |",
         "",
         f"- Tabla fija de referencia: {report.fixed_encoding} (Windows-1252)",
         f"- Texto representable en tabla fija: {report.fixed_representable}",

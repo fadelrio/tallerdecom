@@ -7,6 +7,7 @@ from common.file_utils import read_file
 from common.report_utils import print_source, print_huffman
 
 from pathlib import Path
+import numpy as np
 
 ruta = Path("textito.txt")
 datos = read_file(ruta) #Lee el texto UTF-8 preservando los caracteres de control
@@ -21,6 +22,11 @@ print_huffman(cod_huffman) #imprime el código y sus estadísticos
 
 print(cod_huffman.codebook["\n"]) #Imprime la palabra binaria correspondiente al
 #carácter de salto de línea (salto de línea) en el código Huffman generado.
+
+longitudes = np.array([len(codigo) for codigo in cod_huffman.codebook.values()], dtype=float)
+K_McM = 2**(-longitudes)
+K_McM = np.sum(K_McM)
+print("La suma de K_McM es:", K_McM)
 
 print("codificado:")
 
