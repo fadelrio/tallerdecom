@@ -218,7 +218,7 @@ def format_source_report(
         unsupported = [_markdown_cell(repr(row.symbol)) for row in rows
                        if not _fits_fixed_code(row.symbol)]
         lines.append("\nCaracteres fuera de Windows-1252: " + ", ".join(unsupported))
-    sample = original.splitlines(keepends=True)[0]
+    sample = original.splitlines(keepends=True)[126] + original.splitlines(keepends=True)[127]
     sample_encoded = encode_source(sample, huffman.codebook)
     sample_received = decode_source(sample_encoded, huffman.codebook)
     longest = max((len(run) for run in re.findall(
