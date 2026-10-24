@@ -148,3 +148,24 @@ class CodingReport:
     fixed_encoding: str = "cp1252"
     fixed_representable: bool = True
     K_McM: float = 0.0
+
+import numpy as np
+
+@dataclass
+class ModulatedData:
+    """Datos modulados como vectores en el espacio de señales.
+
+    Los parámetros de la modulación (M, tipo, bits por símbolo, Eb) no se
+    guardan acá: viven en la configuración compartida por transmisor y receptor.
+
+    Attributes:
+        symbols: Matriz de forma (N, D); cada fila es un símbolo de la
+            constelación expresado en una base ortonormal de dimensión D
+            (D = 1 para PAM, D = M para FSK ortogonal).
+        padding_bits: Ceros agregados al final de la secuencia de bits para
+            completar el último bloque de log2(M) bits. El receptor debe
+            descartarlos.
+    """
+
+    symbols: np.ndarray
+    padding_bits: int = 0

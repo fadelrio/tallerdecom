@@ -2,7 +2,7 @@
 
 from common.file_utils import compare_data, read_file, write_file
 from common.report_utils import format_source_report
-from config import SimulationConfig, load_config
+from config import SimulationConfig, load_config, load_modulation_config
 from pathlib import Path
 import argparse
 from html import escape
@@ -10,6 +10,7 @@ from receiver.source_decoder import decode_source
 from transmitter.huffman import build_huffman_code
 from transmitter.source_analysis import analyze_source
 from transmitter.source_encoder import encode_source
+from transmitter.modulation import modulation
 
 
 def main() -> None:
@@ -47,6 +48,7 @@ def run_simulation(config: SimulationConfig) -> None:
     statistics = analyze_source(data)
     huffman = build_huffman_code(statistics.probabilities)
     encoded = encode_source(data, huffman.codebook)
+
     print(f"Fuente codificada: {len(encoded.bits)} bits\n")
     # Conexión directa: no hay operaciones de canal entre ambos bloques.
     received = decode_source(encoded, huffman.codebook)
