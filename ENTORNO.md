@@ -81,12 +81,17 @@ python -m pytest -q
 ```
 
 La primera salida debe apuntar al Python dentro de `.venv`. El programa
-principal muestra las etapas pendientes y no requiere un archivo de entrada.
+principal procesa el TXT configurado y muestra los resultados de fuente;
+si el archivo no existe, informa el error sin escribir la salida.
 La suite incluye arquitectura, análisis y codificación por bloques e
 integración con Huffman. Las pruebas de decodificación ya se ejecutan.
-La suite da pruebas de interfaces textuales, Unicode y E/S sin omisiones; consultar el
-[estado de las pruebas](tests/README.md). `pytest` es la única dependencia externa directa del proyecto;
-`pip` también instalará las dependencias propias de esa herramienta.
+La suite comprueba interfaces textuales, Unicode y E/S. Los contratos y PAM
+existente se ejecutan; los casos funcionales pendientes de modulación se omiten
+solo al recibir `NotImplementedError`. Consultar el
+[estado de las pruebas](tests/README.md). Las dependencias directas declaradas
+son `pytest` y `numpy`; `pip` también instalará sus dependencias necesarias.
+Matplotlib queda para la futura implementación de gráficos y no se requiere
+para importar los esqueletos ni ejecutar las pruebas actuales.
 
 Para salir de un entorno activado:
 

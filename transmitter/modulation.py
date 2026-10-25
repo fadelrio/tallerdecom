@@ -1,4 +1,4 @@
-
+"""PAM existente y contrato pendiente de FSK; sin cambios en los algoritmos."""
 from common.data_types import ModulatedData
 from common.data_types import EncodedSource
 from config import ModulationConfig
@@ -10,14 +10,13 @@ def modulation(encoded: EncodedSource, Modulacion_config: ModulationConfig) -> M
 
     Args:
         encoded: Fuente codificada con bits.
-        config: Configuración de modulación (M y tipo).
+        Modulacion_config: Configuración de modulación (M y tipo).
 
     Returns:
         Objeto ModulatedData con los símbolos modulados.
     """
-    # Aquí se implementaría la lógica de modulación según el tipo y M.
-    # Por ejemplo, para PAM o FSK, se mapearían los bits a símbolos en la constelación.
-    # Esta función es un placeholder y debe ser completada según los requisitos específicos.
+    # Pendiente: validar con validate_modulation_config, aplicar labeling y
+    # code_rate y compartir build_constellation. Se conserva el selector actual.
     
     if(Modulacion_config.tipo == 'PAM'):
         # Implementar modulación PAM
@@ -45,6 +44,11 @@ def modulation_PAM(encoded: EncodedSource, M: int, Eb: float = 1.0) -> Modulated
 
     Returns:
         Objeto ModulatedData con los símbolos modulados en PAM (matriz (N, 1)).
+
+    Notes:
+        Implementación existente conservada. Usa Gray y Eb del flujo de bits
+        recibido, sin corrección de canal. Queda pendiente conectarla con la
+        constelación compartida, etiquetamiento configurable y tasa de código.
     """
     k = int(log2(M)) #bits por símbolo
 
@@ -69,15 +73,26 @@ def modulation_PAM(encoded: EncodedSource, M: int, Eb: float = 1.0) -> Modulated
 
 
 def modulation_FSK(encoded: EncodedSource, M: int, Eb: float = 1.0) -> ModulatedData:
-    """Implementa la modulación FSK para los bits codificados.
+    """Implementará FSK ortogonal mediante coordenadas, sin formas de onda.
 
     Args:
         encoded: Fuente codificada con bits.
         M: Cantidad de símbolos en la constelación.
+        Eb: Energía por bit del flujo de entrada; por defecto unitaria.
 
     Returns:
-        Objeto ModulatedData con los símbolos modulados en FSK.
+        Símbolos (N, M), con relleno de ceros hasta completar el último bloque
+        y padding_bits indicando cuántos bits se agregaron. Para entrada vacía,
+        matriz (0, M) y relleno cero.
+
+    Raises:
+        NotImplementedError: Mientras FSK esté pendiente.
+        ValueError: En la futura implementación, para bits o parámetros inválidos.
+
+    Notes:
+        Conservar la firma existente. El caso básico usará Gray reflejado por
+        orden de eje de base, como build_constellation con valores por defecto.
+        La selección binaria y la tasa de canal quedan por integrar en el
+        selector y las interfaces de los moduladores. No implementar portadoras.
     """
-    # Aquí se implementaría la lógica específica de modulación FSK.
-    # Esta función es un placeholder y debe ser completada según los requisitos específicos.
-    raise(NotImplementedError("La modulación FSK aún no está implementada."))
+    raise NotImplementedError("La modulación FSK aún no está implementada.")

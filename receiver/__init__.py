@@ -1,1 +1,1 @@
-"""Interfaces de reconstrucción de la fuente en el receptor."""
+"""Reconstrucción de fuente y contratos pendientes de demodulación PAM/FSK."""

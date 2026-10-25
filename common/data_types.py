@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from collections.abc import Iterator
 
+import numpy as np
+
 
 @dataclass
 class SourceStatistics:
@@ -149,7 +151,6 @@ class CodingReport:
     fixed_representable: bool = True
     K_McM: float = 0.0
 
-import numpy as np
 
 @dataclass
 class ModulatedData:
@@ -169,3 +170,74 @@ class ModulatedData:
 
     symbols: np.ndarray
     padding_bits: int = 0
+
+
+@dataclass
+class Constellation:
+    """Constelación compartida por modulación, demodulación y gráficos.
+
+    Attributes:
+        symbols: Coordenadas reales (M, D) en una base ortonormal.
+        labels: Palabras binarias asociadas a las filas, en el mismo orden.
+            PAM ordenará niveles de menor a mayor; FSK, ejes de base.
+    """
+
+    symbols: np.ndarray
+    labels: list[str]
+
+
+@dataclass
+class DemodulatedData:
+    """Salida futura de las decisiones del receptor.
+
+    Attributes:
+        symbols: Coordenadas decididas (N, D), pertenecientes a la constelación;
+            conserva también el último símbolo que contenía relleno.
+        bits: Cadena binaria recuperada, sin los bits de relleno finales.
+    """
+
+    symbols: np.ndarray
+    bits: str
+
+
+@dataclass
+class EnergyStatistics:
+    """Energías teóricas o estimadas, sin cálculos dentro de la estructura.
+
+    Attributes:
+        symbol_energy: Energía media por símbolo de modulación, Es.
+        channel_bit_energy: Energía media por bit transmitido de canal, Ec.
+        bit_energy: Energía media por bit de información, Eb.
+    """
+
+    symbol_energy: float
+    channel_bit_energy: float
+    bit_energy: float
+
+
+@dataclass
+class ErrorRates:
+    """Probabilidades teóricas o frecuencias estimadas de error.
+
+    Attributes:
+        symbol_error_rate: Probabilidad o frecuencia de error de símbolo, SER.
+        bit_error_rate: Probabilidad o frecuencia de error de bit, BER.
+    """
+
+    symbol_error_rate: float
+    bit_error_rate: float
+
+
+@dataclass
+class SymbolStatistics:
+    """Datos del histograma en el orden de la constelación.
+
+    Attributes:
+        labels: Etiquetas de todos los símbolos, incluso los no observados.
+        counts: Vector entero (M,) con cantidades de apariciones.
+        probabilities: Vector real (M,) de frecuencias relativas observadas.
+    """
+
+    labels: list[str]
+    counts: np.ndarray
+    probabilities: np.ndarray

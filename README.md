@@ -1,7 +1,8 @@
 # Sistema de comunicaciones digitales
 
-Proyecto académico TA137: transmisión de un archivo de texto, según los
-apartados A/B de la consigna. Se procesa texto por caracteres, no por bytes
+Proyecto académico TA137: transmisión de un archivo de texto, con los
+apartados A/B implementados y contratos del apartado de modulación PAM/FSK.
+Se procesa texto por caracteres, no por bytes
 UTF-8. Cada símbolo es un punto de código Unicode de Python `str`.
 
 ## Arquitectura
@@ -11,6 +12,19 @@ UTF-8. Cada símbolo es un punto de código Unicode de Python `str`.
 → conexión directa → decodificación Huffman → texto → escritura .txt UTF-8 → comparación
 ```
 
+Ese es el flujo de la CLI actual. La función `run_modulation_simulation`
+ya conecta las etapas del siguiente recorrido:
+
+```text
+bits Huffman → modulación → coordenadas → demodulación → bits sin relleno
+→ decodificación Huffman → texto
+```
+
+La orquestación está implementada, pero sus dependencias de constelaciones,
+recepción, mediciones y gráficos todavía lanzan `NotImplementedError`.
+No se ocultan esas excepciones ni se simulan resultados faltantes. `main`
+y la CLI conservan el flujo B. No se agrega ruido al canal.
+
 Se conservan mayúsculas, acentos, espacios, controles, BOM y saltos CR/LF/CRLF.
 No se normaliza Unicode: `é` y `e` seguido de acento combinante son secuencias
 distintas. Un emoji compuesto puede contener varios puntos de código.
@@ -19,9 +33,10 @@ La representación como bytes solo aparece al leer/escribir el archivo UTF-8.
 ## Estructura
 
 - `main.py`: lectura, rechazo controlado del vacío, transmisión de fuente,
-  recepción directa, escritura, comparación y tablas del apartado B.
-- `config.py`: `SimulationConfig`, rutas `entrada.txt` y `recibido.txt` junto
-  al módulo; pueden editarse para elegir otros archivos.
+  recepción directa, escritura, comparación y tablas del apartado B;
+  `run_modulation_simulation` orquesta la etapa nueva como entrada separada.
+- `config.py`: `SimulationConfig`, rutas de ejemplo en `res/`,
+  `ModulationConfig` y `validate_modulation_config` implementado.
 - `common/data_types.py`: dataclasses compartidas.
 - `common/file_utils.py`: lectura/escritura UTF-8 y comparación textual exacta.
 - `common/report_utils.py`: preparación y presentación de tablas y muestra
@@ -30,10 +45,16 @@ La representación como bytes solo aparece al leer/escribir el archivo UTF-8.
 - `transmitter/huffman.py`: árbol, código, estadísticas y eficiencia.
 - `transmitter/source_encoder.py`: codificación por bloques de 65536 caracteres.
 - `receiver/source_decoder.py`: reconstrucción de texto desde los bits.
+- `transmitter/modulation.py`: PAM Gray existente y esqueleto de FSK ortogonal.
+- `receiver/demodulation.py`: esqueletos del selector y receptores PAM/FSK.
+- `common/constellations.py`: futura definición común de coordenadas y etiquetas.
+- `common/modulation_metrics.py`: futuras energías, SER, BER e histograma.
+- `common/modulation_plots.py`: futuros gráficos, sin importar Matplotlib todavía.
+- `common/modulation_report.py`: presentación Markdown implementada, sin cálculos.
 - `tests/`: pruebas automáticas; `pytest.ini` limita su recolección a esta carpeta.
 - `experiments/`: scripts manuales; `test_B.py` conserva su estilo original,
   adaptado únicamente a claves de caracteres y resultado `str`.
-- `requirements.txt`: pytest; el programa usa la biblioteca estándar.
+- `requirements.txt`: pytest y NumPy, ya utilizado por el programa.
 - `ENTORNO.md`: preparación del entorno sin depender de ningún editor o agente.
 - Los `__init__.py` identifican paquetes; cada paquete tiene su propio README.
 
@@ -87,10 +108,24 @@ los enumera; el recorrido Huffman sigue funcionando con Unicode. El total
 - [x] Referencia fija Windows-1252 de 8 bits identificada en la salida.
 - [ ] Completar validaciones de códigos malformados del decodificador.
 
-### Etapas futuras
+### Modulación y demodulación: PAM y FSK
+
+- [x] PAM con Gray, coordenadas `(N, 1)` y metadato de relleno.
+- [x] Contratos, dataclasses, docstrings y pruebas para las funciones pendientes.
+- [x] Experimento manual PAM con entrada propia y sin ejecución al importarlo.
+- [x] Validación de configuración, conectada al cargador y a la nueva simulación.
+- [x] Presentación de energías, errores e histograma en Markdown.
+- [x] Orquestación sin ruido, probada con sustitutos de las dependencias pendientes.
+- [ ] Implementar la constelación compartida.
+- [ ] Aplicar etiquetamiento configurable y tasa de canal en los moduladores.
+- [ ] Modulación FSK y demodulación PAM/FSK.
+- [ ] Energías teóricas/estimadas, SER, BER y frecuencias por símbolo.
+- [ ] Gráficos con etiquetas y regiones e histograma.
+- [ ] Completar las dependencias para ejecutar la simulación real de punta a punta.
+
+### Otras etapas futuras
 
 - [ ] Codificación y decodificación de canal.
-- [ ] Modulación y demodulación.
 - [ ] AWGN y respuesta impulsiva.
 
 ## Ejecución y tests
@@ -101,6 +136,7 @@ Requiere Python 3.10 o posterior. Ver [ENTORNO.md](ENTORNO.md).
 python main.py
 python -m pytest -q -rs
 python -m experiments.test_B
+python -m experiments.experimento_PAM
 ```
 
 Si la entrada no existe, está vacía o no es UTF-8 válido, el principal
@@ -111,6 +147,85 @@ se sobrescribe cuando la ejecución es válida.
 Las pruebas verifican contratos, Unicode, acentos, controles, bloques, errores,
 ida y vuelta y E/S textual. Los experimentos manuales se documentan en
 [experiments/README.md](experiments/README.md).
+
+Los contratos, la validación, el informe, la orquestación con bloques
+sustituidos y los casos de PAM existente se ejecutan. Los
+casos funcionales de las funciones pendientes se omiten solo al recibir
+`NotImplementedError` y quedan listos para ejecutarse al implementarlas.
+Consultar [tests/README.md](tests/README.md) para distinguir ambos grupos.
+Matplotlib queda como dependencia futura, cuando se implementen los gráficos.
+
+## Contratos del apartado de modulación
+
+`ModulationConfig(M, tipo, Eb=1.0, labeling="gray", code_rate=1.0)` agrega
+metadatos para las implementaciones. El constructor no valida.
+`validate_modulation_config` comprueba tipos, M en 2/4/8/16, esquema PAM/FSK,
+etiquetas Gray/binarias, Eb finita positiva y tasa finita en (0, 1].
+El cargador ya lo utiliza y rechaza M=1. No se aceptan booleanos como números.
+PAM y el selector existentes todavía no aplican `labeling` ni `code_rate`.
+
+Las coordenadas son matrices reales `(N, D)` en bases ortonormales: `D=1`
+para PAM y `D=M` para FSK ortogonal coherente. `Constellation` asocia filas
+con etiquetas; `ModulatedData` conserva `padding_bits`. `DemodulatedData`
+conservará todos los símbolos decididos, pero devolverá los bits sin relleno.
+Las decisiones empatadas elegirán la primera fila de la constelación.
+
+`EnergyStatistics` distingue energía de símbolo, de bit de canal y de bit de
+información. `ErrorRates` conserva SER y BER. `SymbolStatistics` incluye
+conteos y probabilidades de todos los símbolos, incluso los no observados.
+Estas dataclasses no calculan ni validan sus datos.
+
+Las referencias teóricas supondrán símbolos equiprobables y AWGN; Eb/N0 se
+expresará en dB respecto del bit de información. SER/BER serán anteriores a
+decodificar el canal. Las muestras y comparaciones vacías o incompatibles se
+rechazarán en las métricas. Los moduladores y demoduladores sí admitirán
+secuencias vacías válidas. El histograma no demostrará automáticamente
+equiprobabilidad; la interpretación y la explicación de Gray corresponden
+al informe de los estudiantes.
+
+Los README de [transmisor](transmitter/README.md), [receptor](receiver/README.md)
+y [utilidades comunes](common/README.md) indican qué implementar en cada archivo.
+
+## Uso de la orquestación de modulación
+
+La llamada compatible con dos argumentos sigue disponible. El parámetro
+opcional `eb_n0_db`, solo por nombre y por defecto 0 dB, identifica la referencia
+teórica en AWGN; las muestras transmitidas siguen sin ruido.
+
+```python
+from config import load_config, load_modulation_config
+from main import run_modulation_simulation
+
+run_modulation_simulation(
+    load_config(), load_modulation_config(4, "PAM"), eb_n0_db=0.0,
+)
+```
+
+Con el estado actual esta llamada se detiene en `build_constellation`, que
+sigue pendiente. La función conecta lectura, Huffman, modulación, demodulación,
+energías, errores, histograma, informe, gráficos y recuperación de texto.
+El receptor retira el relleno una sola vez. Se compara el archivo recibido
+releído con la entrada y se presenta el resultado, sin usar el informe B.
+
+Cuando los bloques estén implementados, se guardarán `<salida>.constellation.png`
+y `<salida>.histogram.png` junto al archivo recibido; el directorio debe existir.
+El Markdown se imprime por consola. Los errores de E/S se informan y las
+dependencias pendientes propagan `NotImplementedError`.
+Hasta integrar `labeling` y `code_rate` en los moduladores, esta entrada exige
+Gray y tasa 1.0: otras opciones válidas se rechazan como todavía no implementadas.
+
+## Funciones pendientes del apartado
+
+- `common/constellations.py`: `build_constellation`.
+- `transmitter/modulation.py`: `modulation_FSK`.
+- `receiver/demodulation.py`: `demodulation`, `demodulation_PAM`, `demodulation_FSK`.
+- `common/modulation_metrics.py`: `estimate_energies`, `theoretical_energies`,
+  `estimate_symbol_error_rate`, `estimate_bit_error_rate`, `theoretical_error_rates`,
+  `symbol_statistics`.
+- `common/modulation_plots.py`: `plot_constellation`, `plot_symbol_histogram`.
+
+Además, falta aplicar etiquetas configurables y tasa de canal en el selector
+y los moduladores existentes, y compartir con ellos la definición de constelación.
 
 ## Mantenimiento
 

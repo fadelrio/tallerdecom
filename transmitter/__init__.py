@@ -1,1 +1,1 @@
-"""Interfaces de análisis y codificación de fuente del transmisor."""
+"""Análisis y codificación de fuente, PAM existente y contrato de FSK."""
