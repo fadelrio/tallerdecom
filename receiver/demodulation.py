@@ -14,19 +14,26 @@ def demodulation(
         config: Parámetros compartidos con el transmisor.
 
     Returns:
-        Símbolos decididos (N, D) y bits sin relleno. La entrada vacía válida
-        devolverá una matriz (0, D) y una cadena vacía.
+        Símbolos decididos (N, D) y bits sin relleno. Podría devolverse solo la 
+        tira de bits, pero puede ser útil conservar los símbolos obtenidos en el receptor. 
+        La entrada vacía válida devolverá una matriz (0, D) y una cadena vacía.
 
     Raises:
         NotImplementedError: Mientras el selector esté pendiente.
-        ValueError: En la futura implementación, para configuración, dimensiones
-            o relleno incompatibles, o coordenadas no finitas.
+        ValueError: En la futura implementación, para entradas incompatibles.
 
     Notes:
-        Delegar en PAM o FSK y aplicar el retiro de relleno una sola vez.
+        Delegar en PAM o FSK.
         Las funciones específicas tendrán el mismo contrato de salida.
     """
-    raise NotImplementedError("Selector de demodulación pendiente.")
+    if config.tipo == "PAM":
+        return demodulation_PAM(modulated, config)
+    elif config.tipo == "FSK":
+        return demodulation_FSK(modulated, config)
+    else:
+        raise ValueError(
+            f"La modulación debe ser 'PAM' o 'FSK', no '{config.tipo}'."
+        )
 
 
 def demodulation_PAM(
@@ -50,7 +57,16 @@ def demodulation_PAM(
         elegir la primera fila de la constelación. Admitir entrada vacía válida.
         No decodificar Huffman ni comparar directamente coordenadas con ruido.
     """
-    raise NotImplementedError("Demodulación PAM pendiente.")
+    symbols = modulated.symbols
+    bits = ""
+    for symbol in symbols:
+        distances = [abs(symbol - s) for s in config.constelacion]# Calcular la distancia a cada símbolo de la constelación
+        
+        closest_index = distances.index(min(distances))# Encontrar el índice del símbolo más cercano
+        
+        bits += config.etiquetas[closest_index]# Obtener la etiqueta correspondiente
+
+    return DemodulatedData(symbols=symbols, bits=bits)    
 
 
 def demodulation_FSK(

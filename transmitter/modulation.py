@@ -20,60 +20,61 @@ def modulation(encoded: EncodedSource, Modulacion_config: ModulationConfig) -> M
     
     if(Modulacion_config.tipo == 'PAM'):
         # Implementar modulación PAM
-        result = modulation_PAM(encoded, Modulacion_config.M, Modulacion_config.Eb)
+        result = modulation_PAM(encoded, Modulacion_config)
     elif(Modulacion_config.tipo == 'FSK'):
         # Implementar modulación FSK
-        result = modulation_FSK(encoded, Modulacion_config.M, Modulacion_config.Eb)
+        result = modulation_FSK(encoded, Modulacion_config)
 
     return result
 
-def modulation_PAM(encoded: EncodedSource, M: int, Eb: float = 1.0) -> ModulatedData:
+def modulation_PAM(encoded: EncodedSource, config: ModulationConfig) -> ModulatedData:
     """Implementa la modulación MPAM con mapeo Gray y energía de bit Eb.
 
     Las coordenadas de los símbolos son ±E0, ±3*E0, ..., ±(M-1)*E0, con E0
     elegido de modo que Es = log2(M) * Eb. La distancia mínima entre símbolos
     vecinos es 2*E0.
 
-    Si la cantidad de bits no es múltiplo de log2(M), se completa con ceros al
-    final y se informa la cantidad agregada en `padding_bits`.
+    Si la cantidad de bits no es múltiplo de h = log2(M), se descartan
+    los bits sobrantes.
 
     Args:
         encoded: Fuente codificada con bits.
-        M: Cantidad de símbolos en la constelación (potencia de 2).
-        Eb: Energía de bit; Es = log2(M) * Eb.
+        config: Configuración de modulación (M, Eb, constelación y etiquetas).
 
     Returns:
         Objeto ModulatedData con los símbolos modulados en PAM (matriz (N, 1)).
-
-    Notes:
-        Implementación existente conservada. Usa Gray y Eb del flujo de bits
-        recibido, sin corrección de canal. Queda pendiente conectarla con la
-        constelación compartida, etiquetamiento configurable y tasa de código.
     """
-    k = int(log2(M)) #bits por símbolo
+    k = int(log2(config.M)) #bits por símbolo
 
-    # Relleno con ceros para completar el último bloque de k bits
-    padding = (-len(encoded.bits)) % k
-    bits = encoded.bits + "0" * padding
+    descartar = len(encoded.bits) % k # Resto de la división entera por k
 
-    # Coordenada del símbolo más cercano al origen, tal que Es = k * Eb
-    E0 = sqrt(3 * k * Eb / (M**2 - 1))
+    if descartar:
+        bits = encoded.bits[:-descartar] #se descartan los últimos bits
+    else:
+        bits = encoded.bits
 
-    # Tabla: palabra Gray -> coordenada (niveles ordenados de menor a mayor)
-    tabla = {}
-    for idx in range(M):
-        gray = idx ^ (idx >> 1)
-        tabla[format(gray, f"0{k}b")] = (2 * idx - (M - 1)) * E0
+    symbols = []
 
-    symbols = np.array(
-        [tabla[bits[i:i + k]] for i in range(0, len(bits), k)]
-    ).reshape(-1, 1)  # (N, 1): D = 1
+    for i in range(0, len(bits), k):
 
-    return ModulatedData(symbols=symbols, padding_bits=padding)
+        etiqueta = bits[i:i+k] #tomar un bloque de k bits
+
+        indice = config.etiquetas.index(etiqueta) #buscar a qué indicie corresponde en el vector de etiquetas
+
+        simbolo = config.constelacion[indice] #en ese mismo índicse se guarda el vector al que corresponde
+
+        symbols.append(simbolo)
+
+    symbols = np.array(symbols)
+
+    return ModulatedData(symbols=symbols)
 
 
-def modulation_FSK(encoded: EncodedSource, M: int, Eb: float = 1.0) -> ModulatedData:
-    """Implementará FSK ortogonal mediante coordenadas, sin formas de onda.
+def modulation_FSK(encoded: EncodedSource, config: ModulationConfig) -> ModulatedData:
+    """Implementará FSK ortogonal mediante coordenadas, sin formas de onda. 
+    Los signos se asignan por código binario.
+    La energía de símbolo es Es = log2(M) * Eb, por lo que la norma de cada 
+    vector es sqrt(Es).
 
     Args:
         encoded: Fuente codificada con bits.
@@ -81,13 +82,8 @@ def modulation_FSK(encoded: EncodedSource, M: int, Eb: float = 1.0) -> Modulated
         Eb: Energía por bit del flujo de entrada; por defecto unitaria.
 
     Returns:
-        Símbolos (N, M), con relleno de ceros hasta completar el último bloque
-        y padding_bits indicando cuántos bits se agregaron. Para entrada vacía,
-        matriz (0, M) y relleno cero.
-
-    Raises:
-        NotImplementedError: Mientras FSK esté pendiente.
-        ValueError: En la futura implementación, para bits o parámetros inválidos.
+        Símbolos (N, M). N es la cantidad de símbolos. Si la cantidad de bits no es múltiplo de 
+        k = log2(M), se descartan los sobrantes.
 
     Notes:
         Conservar la firma existente. El caso básico usará Gray reflejado por
@@ -95,4 +91,27 @@ def modulation_FSK(encoded: EncodedSource, M: int, Eb: float = 1.0) -> Modulated
         La selección binaria y la tasa de canal quedan por integrar en el
         selector y las interfaces de los moduladores. No implementar portadoras.
     """
-    raise NotImplementedError("La modulación FSK aún no está implementada.")
+    k = int(log2(config.M)) #bits por símbolo
+
+    descartar = len(encoded.bits) % k # Resto de la división entera por k
+
+    if descartar:
+        bits = encoded.bits[:-descartar] #se descartan los últimos bits
+    else:
+        bits = encoded.bits
+
+    symbols = []
+
+    for i in range(0, len(bits), k):
+
+        etiqueta = bits[i:i+k] #tomar un bloque de k bits
+
+        indice = config.etiquetas.index(etiqueta) #buscar a qué indicie corresponde en el vector de etiquetas
+
+        simbolo = config.constelacion[indice] #en ese mismo índicse se guarda el vector al que corresponde
+
+        symbols.append(simbolo)
+
+    symbols = np.array(symbols)
+    
+    return ModulatedData(symbols=symbols)

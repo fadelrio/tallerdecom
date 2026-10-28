@@ -7,6 +7,7 @@ IMPORTANTE: CORRER CON ESTE COMANDO: python -m experiments.experimento_PAM
 from common.file_utils import read_file
 from config import SimulationConfig, load_config, load_modulation_config
 from html import escape
+from receiver.demodulation import demodulation
 from transmitter.huffman import build_huffman_code
 from transmitter.source_analysis import analyze_source
 from transmitter.source_encoder import encode_source
@@ -45,17 +46,21 @@ def run_pam_experiment(config: SimulationConfig) -> None:
     huffman = build_huffman_code(statistics.probabilities)
     encoded = encode_source(data, huffman.codebook)
     
-    modulacion_config = load_modulation_config(16, 'PAM', 1.0)
+    modulacion_config = load_modulation_config(2, 'PAM', 1.0)
     datos_modulados = modulation(encoded, modulacion_config)
 
     print(f"Cantidad original de bits: {len(encoded.bits)}\n\n")
-    print("\n################################\n")
-    print(f"bits de padding agregados: {datos_modulados.padding_bits}\n")
     print("\n################################\n")
     print(f"Dimensión de los datos modulados: {datos_modulados.symbols.shape}\n")
     print("\n################################\n")
     print(f"Primeros 10 datos modulados:\n{datos_modulados.symbols[:10]}\n")
 
+
+    print("\n################################\n")
+    print("DEMODULACION")
+    datos_demodulados = demodulation(datos_modulados, modulacion_config)
+    print(f"Símbolos demodulados: {datos_demodulados.symbols[:10]}")
+    
 
 if __name__ == "__main__":
     run_pam_experiment(load_config())

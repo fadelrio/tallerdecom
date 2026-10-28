@@ -163,13 +163,9 @@ class ModulatedData:
         symbols: Matriz de forma (N, D); cada fila es un símbolo de la
             constelación expresado en una base ortonormal de dimensión D
             (D = 1 para PAM, D = M para FSK ortogonal).
-        padding_bits: Ceros agregados al final de la secuencia de bits para
-            completar el último bloque de log2(M) bits. El receptor debe
-            descartarlos.
     """
 
     symbols: np.ndarray
-    padding_bits: int = 0
 
 
 @dataclass
@@ -192,8 +188,7 @@ class DemodulatedData:
 
     Attributes:
         symbols: Coordenadas decididas (N, D), pertenecientes a la constelación;
-            conserva también el último símbolo que contenía relleno.
-        bits: Cadena binaria recuperada, sin los bits de relleno finales.
+        bits: Cadena binaria recuperada.
     """
 
     symbols: np.ndarray

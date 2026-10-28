@@ -1,9 +1,10 @@
 """Configuración de fuente y contratos para la futura etapa de modulación."""
 
 from dataclasses import dataclass
-from math import isfinite
+from math import isfinite, log2
 from numbers import Integral, Real
 from pathlib import Path
+import numpy as np
 
 
 @dataclass
@@ -52,8 +53,10 @@ class ModulationConfig:
 
     M: int
     tipo: str
+    constelacion: np.ndarray # Matriz con los vectores de la constelación. Se genera en la configuración
+    etiquetas: list[str] # Lista de etiquetas binarias asociadas a los símbolos de la constelación. Se genera en la configuración
     Eb: float = 1.0  # Energía de bit, por defecto 1.0
-    labeling: str = "gray"
+    #labeling: str = "gray" #¿Sacar? PAM usa gray y FSK binario, no se necesita saber más
     code_rate: float = 1.0
 
 
@@ -76,9 +79,23 @@ def load_modulation_config(M: int, tipo: str, Eb: float = 1.0) -> ModulationConf
         labeling y code_rate toman los valores por defecto de la dataclass;
         pueden especificarse al construir ModulationConfig directamente.
     """
-    config = ModulationConfig(M=M, tipo=tipo, Eb=Eb)
+    k = int(log2(M))
+    if tipo == "PAM":
+        E0 = np.sqrt(3 * k * Eb / (M**2 - 1))
+        constelacion = np.array([[(-M + 1 + 2 * i) * E0] for i in range(M)]) #Vectores de la constelación
+        etiquetas = [format(i ^ (i >> 1), f"0{k}b") for i in range(M)]  # Código Gray
+
+    elif tipo == "FSK":
+        norma = np.sqrt(k * Eb)
+        constelacion = norma * np.eye(M)  # Base ortonormal para FSK
+        etiquetas = [format(i, f"0{k}b") for i in range(M)]  # Código binario
+
+    
+    config = ModulationConfig(M=M, tipo=tipo, Eb=Eb, constelacion=constelacion, etiquetas=etiquetas)
     validate_modulation_config(config)
     return config
+
+
 
 
 def validate_modulation_config(config: ModulationConfig) -> None:
@@ -111,10 +128,10 @@ def validate_modulation_config(config: ModulationConfig) -> None:
         raise TypeError("tipo debe ser una cadena.")
     if config.tipo not in ("PAM", "FSK"):
         raise ValueError("tipo debe ser 'PAM' o 'FSK'.")
-    if not isinstance(config.labeling, str):
-        raise TypeError("labeling debe ser una cadena.")
-    if config.labeling not in ("gray", "binary"):
-        raise ValueError("labeling debe ser 'gray' o 'binary'.")
+    #if not isinstance(config.labeling, str):
+    #    raise TypeError("labeling debe ser una cadena.")
+    #if config.labeling not in ("gray", "binary"):
+    #    raise ValueError("labeling debe ser 'gray' o 'binary'.")
     for name, value in (("Eb", config.Eb), ("code_rate", config.code_rate)):
         if isinstance(value, bool) or not isinstance(value, Real):
             raise TypeError(f"{name} debe ser un número real y no un booleano.")
