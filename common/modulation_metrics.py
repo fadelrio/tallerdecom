@@ -29,7 +29,39 @@ def estimate_energies(
         Usar la energía en una base ortonormal. No suponer equiprobabilidad en
         la muestra ni forzar el resultado al Eb nominal de la configuración.
     """
-    raise NotImplementedError("Estimación de energías pendiente.")
+
+    symbols = np.asarray(symbols)
+
+    # Validar que la secuencia no esté vacía y tenga dos dimensiones.
+    if symbols.ndim != 2 or symbols.shape[0] == 0 or symbols.shape[1] == 0:
+        raise ValueError("La secuencia debe ser una matriz no vacía (N, D).")
+
+    # Validar que las coordenadas sean finitas.
+    if not np.all(np.isfinite(symbols)):
+        raise ValueError("Las coordenadas deben ser finitas.")
+
+    # Obtener los parámetros de la configuración.
+    M = config.M
+    Rc = config.code_rate
+
+    if M <= 1 or Rc <= 0 or Rc > 1:
+        raise ValueError("Configuración de modulación o tasa de código inválida.")
+
+    # Energía media por símbolo.
+    Es = np.mean(np.sum(symbols**2, axis=1))
+
+    # Energía media por bit de canal e información.
+    bits_por_simbolo = np.log2(M)
+    Ec = Es / bits_por_simbolo
+    Eb = Ec / Rc
+
+    return EnergyStatistics(
+        symbol_energy=float(Es),
+        channel_bit_energy=float(Ec),
+        bit_energy=float(Eb),
+    )
+
+    
 
 
 def theoretical_energies(config: ModulationConfig) -> EnergyStatistics:
@@ -49,7 +81,31 @@ def theoretical_energies(config: ModulationConfig) -> EnergyStatistics:
         Diferenciar Eb de información y Ec del flujo de canal. Una muestra
         PAM no equiprobable puede diferir de esta referencia.
     """
-    raise NotImplementedError("Energías teóricas pendientes.")
+    M = config.M
+    Eb = config.Eb
+    Rc = config.code_rate
+
+    # Validar la configuración.
+    if M <= 1 or not np.log2(M).is_integer():
+        raise ValueError("M debe ser una potencia de 2 mayor que 1.")
+
+    if not np.isfinite(Eb) or Eb <= 0:
+        raise ValueError("Eb debe ser un valor positivo y finito.")
+
+    if not np.isfinite(Rc) or Rc <= 0 or Rc > 1:
+        raise ValueError("La tasa de código debe estar entre 0 y 1.")
+
+    # Energías medias por bit de canal y por símbolo.
+    Ec = Eb * Rc
+    Es = Ec * np.log2(M)
+
+    return EnergyStatistics(
+        symbol_energy=float(Es),
+        channel_bit_energy=float(Ec),
+        bit_energy=float(Eb),
+    )
+
+    
 
 
 def estimate_symbol_error_rate(
@@ -73,7 +129,36 @@ def estimate_symbol_error_rate(
         Contar un símbolo erróneo aunque cambien varias coordenadas. Incluir
         el símbolo final con relleno. No recibir observaciones con ruido.
     """
-    raise NotImplementedError("Estimación de SER pendiente.")
+
+    transmitted = np.asarray(transmitted)
+    decided = np.asarray(decided)
+
+    # Validar dimensiones y formas.
+    if transmitted.ndim != 2 or decided.ndim != 2:
+        raise ValueError("Ambas secuencias deben ser matrices (N, D).")
+
+    if transmitted.shape != decided.shape:
+        raise ValueError("Las secuencias deben tener la misma forma.")
+
+    if transmitted.shape[0] == 0 or transmitted.shape[1] == 0:
+        raise ValueError("Las secuencias no pueden estar vacías.")
+
+    # Validar que las coordenadas sean numéricas y finitas.
+    if not np.issubdtype(transmitted.dtype, np.number):
+        raise ValueError("Los símbolos transmitidos deben ser numéricos.")
+
+    if not np.issubdtype(decided.dtype, np.number):
+        raise ValueError("Los símbolos decididos deben ser numéricos.")
+
+    if not np.all(np.isfinite(transmitted)) or not np.all(np.isfinite(decided)):
+        raise ValueError("Las coordenadas deben ser finitas.")
+
+    # Comparar símbolos completos.
+    errores = np.any(transmitted != decided, axis=1)
+
+    return float(np.mean(errores))
+
+
 
 
 def estimate_bit_error_rate(transmitted: str, received: str) -> float:
