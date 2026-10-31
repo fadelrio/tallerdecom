@@ -52,16 +52,17 @@ def estimate_energies(
 
     # Energía media por bit de canal e información.
     bits_por_simbolo = np.log2(M)
-    Ec = Es / bits_por_simbolo
-    Eb = Ec / Rc
+    
+    #Ec = Es / bits_por_simbolo A completar después
+    Ec = 1.0
+
+    Eb = Es / bits_por_simbolo
 
     return EnergyStatistics(
         symbol_energy=float(Es),
         channel_bit_energy=float(Ec),
         bit_energy=float(Eb),
-    )
-
-    
+    ) 
 
 
 def theoretical_energies(config: ModulationConfig) -> EnergyStatistics:
@@ -97,7 +98,7 @@ def theoretical_energies(config: ModulationConfig) -> EnergyStatistics:
 
     # Energías medias por bit de canal y por símbolo.
     Ec = Eb * Rc
-    Es = Ec * np.log2(M)
+    Es = Eb * np.log2(M)
 
     return EnergyStatistics(
         symbol_energy=float(Es),
@@ -106,8 +107,6 @@ def theoretical_energies(config: ModulationConfig) -> EnergyStatistics:
     )
 
     
-
-
 def estimate_symbol_error_rate(
     transmitted: np.ndarray, decided: np.ndarray,
 ) -> float:

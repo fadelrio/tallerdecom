@@ -48,8 +48,10 @@ def modulation_PAM(encoded: EncodedSource, config: ModulationConfig) -> Modulate
 
     descartar = len(encoded.bits) % k # Resto de la división entera por k
 
+    flag_descarte = False
     if descartar:
         bits = encoded.bits[:-descartar] #se descartan los últimos bits
+        flag_descarte = True
     else:
         bits = encoded.bits
 
@@ -67,7 +69,7 @@ def modulation_PAM(encoded: EncodedSource, config: ModulationConfig) -> Modulate
 
     symbols = np.array(symbols)
 
-    return ModulatedData(symbols=symbols)
+    return ModulatedData(symbols=symbols, flag_descarte=flag_descarte)
 
 
 def modulation_FSK(encoded: EncodedSource, config: ModulationConfig) -> ModulatedData:
@@ -95,8 +97,10 @@ def modulation_FSK(encoded: EncodedSource, config: ModulationConfig) -> Modulate
 
     descartar = len(encoded.bits) % k # Resto de la división entera por k
 
+    flag_descarte = False
     if descartar:
         bits = encoded.bits[:-descartar] #se descartan los últimos bits
+        flag_descarte = True
     else:
         bits = encoded.bits
 
@@ -114,4 +118,4 @@ def modulation_FSK(encoded: EncodedSource, config: ModulationConfig) -> Modulate
 
     symbols = np.array(symbols)
     
-    return ModulatedData(symbols=symbols)
+    return ModulatedData(symbols=symbols, flag_descarte=flag_descarte)

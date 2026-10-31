@@ -2,6 +2,7 @@
 
 from common.data_types import DemodulatedData, ModulatedData
 from config import ModulationConfig
+import numpy as np
 
 
 def demodulation(
@@ -57,16 +58,21 @@ def demodulation_PAM(
         elegir la primera fila de la constelación. Admitir entrada vacía válida.
         No decodificar Huffman ni comparar directamente coordenadas con ruido.
     """
-    symbols = modulated.symbols
+    simbolos_ruidosos = modulated.symbols
+    simbolo_decidido = []
     bits = ""
-    for symbol in symbols:
+    for symbol in simbolos_ruidosos:
         distances = [abs(symbol - s) for s in config.constelacion]# Calcular la distancia a cada símbolo de la constelación
         
         closest_index = distances.index(min(distances))# Encontrar el índice del símbolo más cercano
+
+        simbolo_decidido.append(config.constelacion[closest_index])# Obtener el símbolo más cercano de la constelación
         
         bits += config.etiquetas[closest_index]# Obtener la etiqueta correspondiente
 
-    return DemodulatedData(symbols=symbols, bits=bits)    
+    simbolo_decidido = np.array(simbolo_decidido)  # Convertir la lista de símbolos decididos a un array de NumPy
+    
+    return DemodulatedData(symbols=simbolo_decidido, bits=bits)    
 
 
 def demodulation_FSK(
@@ -89,4 +95,18 @@ def demodulation_FSK(
         Usar la constelación común. En empates elegir su primera fila.
         Admitir entrada vacía válida. No sintetizar ni procesar portadoras.
     """
-    raise NotImplementedError("Demodulación FSK pendiente.")
+    symbolos_ruidosos = modulated.symbols
+    simbolo_decidido = []
+    bits = ""
+    for symbol in symbolos_ruidosos:
+        distances = [np.linalg.norm(symbol - s) for s in config.constelacion]# Calcular la distancia a cada símbolo de la constelación
+        
+        closest_index = distances.index(min(distances))# Encontrar el índice del símbolo más cercano
+
+        simbolo_decidido.append(config.constelacion[closest_index])# Obtener el símbolo más cercano de la constelación
+        
+        bits += config.etiquetas[closest_index]# Obtener la etiqueta correspondiente
+
+    simbolo_decidido = np.array(simbolo_decidido)  # Convertir la lista de símbolos decididos a un array de NumPy
+
+    return DemodulatedData(symbols=simbolo_decidido, bits=bits)

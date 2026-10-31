@@ -166,6 +166,7 @@ class ModulatedData:
     """
 
     symbols: np.ndarray
+    flag_descarte: bool = False  # Indica si se descartaron bits sobrantes al final
 
 
 @dataclass
@@ -236,3 +237,17 @@ class SymbolStatistics:
     labels: list[str]
     counts: np.ndarray
     probabilities: np.ndarray
+
+
+@dataclass
+class ChannelConfig:
+    """Parámetros de la simulación de canal.
+
+    Attributes:
+        ebno: Relación señal a ruido en decibelios.
+        N0: Densidad espectral de potencia del ruido, N₀.
+        A futuro se incluirán otros efectos de canal como desvanecimiento, interferencia, etc.
+    """
+
+    ebno_dB: float
+    N0: float # densidad espectral de potencia del ruido

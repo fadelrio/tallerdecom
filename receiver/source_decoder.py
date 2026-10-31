@@ -14,7 +14,7 @@ class _DecodeNode:
     def is_leaf(self) -> bool:
         return self.symbol is not None
 
-def decode_source(encoded: EncodedSource, codebook: dict[str, str]) -> str:
+def decode_source(encoded: EncodedSource, codebook: dict[str, str], discard_incomplete: bool = True) -> str:
     """Reconstruye la secuencia original de símbolos.
 
     Args:
@@ -84,7 +84,7 @@ def decode_source(encoded: EncodedSource, codebook: dict[str, str]) -> str:
             decoded.append(node.symbol)
             node = root
 
-    if node is not root:
+    if node is not root and not discard_incomplete:
         raise ValueError("La secuencia termina con una palabra incompleta.")
 
     return "".join(decoded)

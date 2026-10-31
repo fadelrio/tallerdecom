@@ -6,6 +6,8 @@ from numbers import Integral, Real
 from pathlib import Path
 import numpy as np
 
+from common.data_types import ChannelConfig
+
 
 @dataclass
 class SimulationConfig:
@@ -30,7 +32,7 @@ def load_config() -> SimulationConfig:
         No lee ni crea archivos. Las rutas pueden editarse aquí.
     """
     root = Path(__file__).resolve().parent
-    return SimulationConfig(root / "res/muchos_martin_fierro.txt", root / "res/output.txt")
+    return SimulationConfig(root / "res/textito.txt", root / "res/textito_output.txt")
 
 
 @dataclass
@@ -41,7 +43,6 @@ class ModulationConfig:
         M: Cantidad de símbolos en la constelación.
         tipo: Esquema asignado al grupo: 'PAM' o 'FSK'.
         Eb: Energía media de bit de información; por defecto unitaria.
-        labeling: Etiquetamiento solicitado: 'gray' o 'binary'.
         code_rate: Tasa de codificación de canal k/n; 1.0 sin codificación.
 
     Notes:
@@ -99,6 +100,8 @@ def load_modulation_config(M: int, tipo: str, Eb: float = 1.0) -> ModulationConf
 
 
 def validate_modulation_config(config: ModulationConfig) -> None:
+
+
     """Valida los parámetros admitidos, sin modificar la configuración.
 
     Args:
@@ -143,3 +146,12 @@ def validate_modulation_config(config: ModulationConfig) -> None:
             raise ValueError(f"{name} debe ser finito y mayor que cero.")
     if config.code_rate > 1:
         raise ValueError("code_rate debe pertenecer al intervalo (0, 1].")
+
+def load_channel_config(ebno_dB: float, eb: float) -> ChannelConfig:
+    """
+    Crea la configuración del canal
+
+    """
+    ebno_veces = 10 ** (ebno_dB / 10)  # Convertir dB a lineal
+    N0 = eb / ebno_veces  # Densidad espectral de potencia del ruido
+    return ChannelConfig(ebno_dB=ebno_dB, N0=N0)
