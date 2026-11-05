@@ -223,6 +223,19 @@ class ErrorRates:
     symbol_error_rate: float
     bit_error_rate: float
 
+@dataclass
+class BitErrorRate:
+    """Resultado de comparar la fuente original y la recibida.
+
+    Attributes:
+        error_rate: Frecuencia de bits distintos, entre cero y uno.
+        total_bits: Cantidad de bits comparados.
+        differing_bits: Cantidad de bits distintos.
+    """
+
+    error_rate: float
+    bits_vistos: int
+    bits_errados: int
 
 @dataclass
 class SymbolStatistics:

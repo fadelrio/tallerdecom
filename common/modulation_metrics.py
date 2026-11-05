@@ -3,7 +3,7 @@
 import numpy as np
 
 from common.data_types import (
-    Constellation, EnergyStatistics, ErrorRates, ModulatedData, SymbolStatistics,
+    Constellation, EnergyStatistics, ErrorRates, ModulatedData, SymbolStatistics, BitErrorRate
 )
 from config import ModulationConfig
 
@@ -158,14 +158,13 @@ def estimate_symbol_error_rate(
     return float(np.mean(errores))
 
 
-
-
-def estimate_bit_error_rate(transmitted: str, received: str) -> float:
-    """Comparará las secuencias binarias transmitida y recuperada.
+def estimate_bit_error_rate(transmitted: str, received: str) -> BitErrorRate:    
+    # Las cadenas pueden tener diferentes longitudes. Contamos los bits agregados como errores.
+    """Compara las secuencias binarias transmitida y recibida.
 
     Args:
         transmitted: Bits originales, sin relleno de modulación.
-        received: Bits recuperados, con el relleno ya descartado.
+        received: Bits recibidos.
 
     Returns:
         Frecuencia de bits distintos, entre cero y uno.
@@ -178,8 +177,27 @@ def estimate_bit_error_rate(transmitted: str, received: str) -> float:
     Notes:
         Comparar flujos de la misma etapa, antes de decodificar Huffman.
     """
-    raise NotImplementedError("Estimación de BER pendiente.")
+    # Validar que las secuencias no estén vacías y tengan la misma longitud.
+    if not transmitted or not received:
+        raise ValueError("Las secuencias no pueden estar vacías.")
 
+    # Validar que las secuencias contengan solo '0' y '1'.
+    if not all(bit in '01' for bit in transmitted):
+        raise ValueError("La secuencia transmitida contiene caracteres inválidos.")
+
+    if not all(bit in '01' for bit in received):
+        raise ValueError("La secuencia recibida contiene caracteres inválidos.")
+
+    # Contar bits distintos. El código debe ser legible.
+    differing_bits = sum(t_bit != r_bit for t_bit, r_bit in zip(transmitted, received))
+    total_bits = len(transmitted)
+    error_rate = differing_bits / total_bits
+
+    return BitErrorRate(
+        error_rate=error_rate,
+        bits_vistos=total_bits,
+        bits_errados=differing_bits
+    )
 
 def theoretical_error_rates(
     config: ModulationConfig, eb_n0_db: float,
