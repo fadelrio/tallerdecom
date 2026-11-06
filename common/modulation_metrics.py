@@ -1,7 +1,11 @@
-"""Contratos de energías, errores e histograma; sin cálculos implementados."""
+"""Energías y tasas de error de modulación."""
+
+from math import erfc, exp, expm1, isfinite, log, log1p, pi, sqrt
+from numbers import Real
 
 import numpy as np
 
+from common.constellations import build_constellation
 from common.data_types import (
     Constellation, EnergyStatistics, ErrorRates, ModulatedData, SymbolStatistics, BitErrorRate
 )
@@ -202,7 +206,7 @@ def estimate_bit_error_rate(transmitted: str, received: str) -> BitErrorRate:
 def theoretical_error_rates(
     config: ModulationConfig, eb_n0_db: float,
 ) -> ErrorRates:
-    """Obtendrá referencias de error para PAM y FSK coherentes en AWGN.
+    """Calcula la SER y BER de PAM y FSK ortogonal coherente en AWGN.
 
     Args:
         config: Constelación, etiquetamiento, energía y tasa de código.
@@ -212,17 +216,82 @@ def theoretical_error_rates(
         SER y BER teóricas en las decisiones previas a decodificar el canal.
 
     Raises:
-        NotImplementedError: Mientras las referencias estén pendientes.
-        ValueError: En la futura implementación, para configuración inválida
-            o relación Eb/N0 no finita.
+        TypeError: Si la configuración o Eb/N0 tienen tipos incompatibles.
+        ValueError: Si la configuración es inválida o Eb/N0 no es finita.
 
     Notes:
-        Suponer símbolos equiprobables, AWGN y FSK ortogonal coherente. Usar
-        code_rate para interpretar Eb/N0, sin atribuir ganancia de un código
-        que no se está decodificando. Documentar cualquier aproximación de BER
-        y su dominio; el etiquetamiento puede afectar BER, no la geometría.
+        Para símbolos equiprobables, Es/N0 = log2(M) * code_rate * Eb/N0.
+        En PAM se integran las regiones de decisión gaussianas y se ponderan
+        por la distancia de Hamming. En FSK se integra numéricamente la
+        probabilidad de que un eje incorrecto supere al eje transmitido.
     """
-    raise NotImplementedError("Probabilidades teóricas de error pendientes.")
+    if isinstance(eb_n0_db, bool) or not isinstance(eb_n0_db, Real):
+        raise TypeError("eb_n0_db debe ser un número real.")
+    if not isfinite(eb_n0_db):
+        raise ValueError("eb_n0_db debe ser finito.")
+
+    constellation = build_constellation(config)
+    order = len(constellation.labels)
+    bits_per_symbol = len(constellation.labels[0])
+    log_es_n0 = log(bits_per_symbol * config.code_rate) + eb_n0_db / 10 * log(10)
+    try:
+        sqrt_es_n0 = exp(log_es_n0 / 2)
+    except OverflowError:
+        return ErrorRates(0.0, 0.0)
+
+    if config.tipo == "PAM":
+        half_spacing = sqrt_es_n0 * sqrt(6 / (order**2 - 1))
+        return _pam_error_rates(constellation.labels, half_spacing)
+
+    ser = _orthogonal_fsk_ser(order, sqrt_es_n0)
+    # Por simetría todos los símbolos erróneos son igual de probables.
+    # Cada bit difiere en M/2 de las M-1 etiquetas incorrectas.
+    return ErrorRates(ser, ser * order / (2 * (order - 1)))
+
+
+def _normal_tail(value: float) -> float:
+    return erfc(value / sqrt(2)) / 2
+
+
+def _pam_error_rates(labels: list[str], half_spacing: float) -> ErrorRates:
+    """Suma las transiciones erróneas entre regiones PAM en unidades de sigma."""
+    order = len(labels)
+    words = [int(label, 2) for label in labels]
+    symbol_errors = bit_errors = 0.0
+    for sent, sent_word in enumerate(words):
+        for decided, decided_word in enumerate(words):
+            if sent == decided:
+                continue
+            offset = 2 * (decided - sent)
+            lower = (offset - 1) * half_spacing if decided > 0 else float("-inf")
+            upper = (offset + 1) * half_spacing if decided < order - 1 else float("inf")
+            # Usar la cola positiva evita restar dos CDF casi iguales a uno.
+            if decided < sent:
+                lower, upper = -upper, -lower
+            probability = _normal_tail(lower) - _normal_tail(upper)
+            symbol_errors += probability
+            bit_errors += probability * (sent_word ^ decided_word).bit_count()
+    return ErrorRates(symbol_errors / order, bit_errors / (order * len(labels[0])))
+
+
+def _orthogonal_fsk_ser(order: int, sqrt_es_n0: float) -> float:
+    """Promedia la probabilidad de error condicionada al ruido del eje enviado."""
+    if order == 2:
+        return _normal_tail(sqrt_es_n0)
+
+    nodes, weights = np.polynomial.legendre.leggauss(64)
+    # El producto de la densidad y la cola de error se concentra cerca de
+    # la mitad de la separación. El corte a 12 sigmas cubre ambas colas.
+    half_separation = sqrt_es_n0 / sqrt(2)
+    integral = 0.0
+    for midpoint in (-6, 6):
+        for node, weight in zip(nodes, weights):
+            offset = midpoint + 6 * float(node)
+            noise = offset - half_separation
+            tail = _normal_tail(offset + half_separation)
+            error = -expm1((order - 1) * log1p(-tail)) if tail < 1 else 1.0
+            integral += float(weight) * exp(-0.5 * noise * noise) * error
+    return 6 * integral / sqrt(2 * pi)
 
 
 def symbol_statistics(

@@ -1,10 +1,9 @@
-"""Configuración de fuente y contratos para la futura etapa de modulación."""
+"""Configuración de fuente, modulación y canal."""
 
 from dataclasses import dataclass
-from math import isfinite, log2
+from math import isfinite
 from numbers import Integral, Real
 from pathlib import Path
-import numpy as np
 
 from common.data_types import ChannelConfig
 
@@ -43,21 +42,14 @@ class ModulationConfig:
         M: Cantidad de símbolos en la constelación.
         tipo: Esquema asignado al grupo: 'PAM' o 'FSK'.
         Eb: Energía media de bit de información; por defecto unitaria.
+        labeling: Etiquetado Gray reflejado o binario natural.
         code_rate: Tasa de codificación de canal k/n; 1.0 sin codificación.
-
-    Notes:
-        No valida sus campos. PAM y el selector actuales todavía no aplican
-        labeling ni code_rate: conservan Gray y el caso sin código de canal.
-        Su aplicación en los moduladores queda pendiente. El cargador y la
-        simulación con modulación ya usan validate_modulation_config.
     """
 
     M: int
     tipo: str
-    constelacion: np.ndarray # Matriz con los vectores de la constelación. Se genera en la configuración
-    etiquetas: list[str] # Lista de etiquetas binarias asociadas a los símbolos de la constelación. Se genera en la configuración
-    Eb: float = 1.0  # Energía de bit, por defecto 1.0
-    #labeling: str = "gray" #¿Sacar? PAM usa gray y FSK binario, no se necesita saber más
+    Eb: float = 1.0
+    labeling: str = "gray"
     code_rate: float = 1.0
 
 
@@ -80,28 +72,11 @@ def load_modulation_config(M: int, tipo: str, Eb: float = 1.0) -> ModulationConf
         labeling y code_rate toman los valores por defecto de la dataclass;
         pueden especificarse al construir ModulationConfig directamente.
     """
-    k = int(log2(M))
-    if tipo == "PAM":
-        E0 = np.sqrt(3 * k * Eb / (M**2 - 1))
-        constelacion = np.array([[(-M + 1 + 2 * i) * E0] for i in range(M)]) #Vectores de la constelación
-        etiquetas = [format(i ^ (i >> 1), f"0{k}b") for i in range(M)]  # Código Gray
-
-    elif tipo == "FSK":
-        norma = np.sqrt(k * Eb)
-        constelacion = norma * np.eye(M)  # Base ortonormal para FSK
-        etiquetas = [format(i, f"0{k}b") for i in range(M)]  # Código binario
-
-    
-    config = ModulationConfig(M=M, tipo=tipo, Eb=Eb, constelacion=constelacion, etiquetas=etiquetas)
+    config = ModulationConfig(M, tipo, Eb)
     validate_modulation_config(config)
     return config
 
-
-
-
 def validate_modulation_config(config: ModulationConfig) -> None:
-
-
     """Valida los parámetros admitidos, sin modificar la configuración.
 
     Args:
@@ -131,10 +106,10 @@ def validate_modulation_config(config: ModulationConfig) -> None:
         raise TypeError("tipo debe ser una cadena.")
     if config.tipo not in ("PAM", "FSK"):
         raise ValueError("tipo debe ser 'PAM' o 'FSK'.")
-    #if not isinstance(config.labeling, str):
-    #    raise TypeError("labeling debe ser una cadena.")
-    #if config.labeling not in ("gray", "binary"):
-    #    raise ValueError("labeling debe ser 'gray' o 'binary'.")
+    if not isinstance(config.labeling, str):
+        raise TypeError("labeling debe ser una cadena.")
+    if config.labeling not in ("gray", "binary"):
+        raise ValueError("labeling debe ser 'gray' o 'binary'.")
     for name, value in (("Eb", config.Eb), ("code_rate", config.code_rate)):
         if isinstance(value, bool) or not isinstance(value, Real):
             raise TypeError(f"{name} debe ser un número real y no un booleano.")

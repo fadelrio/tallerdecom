@@ -37,7 +37,7 @@ CONTRACTS = (
     ("common.modulation_metrics", "estimate_bit_error_rate", {"transmitted": str, "received": str, "return": float}),
     ("common.modulation_metrics", "theoretical_error_rates", {"config": ModulationConfig, "eb_n0_db": float, "return": ErrorRates}),
     ("common.modulation_metrics", "symbol_statistics", {"modulated": ModulatedData, "constellation": Constellation, "return": SymbolStatistics}),
-    ("common.modulation_plots", "plot_constellation", {"constellation": Constellation, "output_file": Path, "return": type(None)}),
+    ("common.modulation_plots", "plot_constellation", {"constellation": Constellation, "output_file": Path, "received_symbols": np.ndarray | None, "return": type(None)}),
     ("common.modulation_plots", "plot_symbol_histogram", {"statistics": SymbolStatistics, "output_file": Path, "return": type(None)}),
     ("common.modulation_report", "format_modulation_report", {"config": ModulationConfig, "theoretical_energies": EnergyStatistics, "estimated_energies": EnergyStatistics, "theoretical_errors": ErrorRates, "estimated_errors": ErrorRates, "statistics": SymbolStatistics, "return": str}),
     ("main", "run_modulation_simulation", {"config": SimulationConfig, "modulation_config": ModulationConfig, "eb_n0_db": float, "return": type(None)}),

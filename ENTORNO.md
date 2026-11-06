@@ -89,9 +89,7 @@ La suite comprueba interfaces textuales, Unicode y E/S. Los contratos y PAM
 existente se ejecutan; los casos funcionales pendientes de modulación se omiten
 solo al recibir `NotImplementedError`. Consultar el
 [estado de las pruebas](tests/README.md). Las dependencias directas declaradas
-son `pytest` y `numpy`; `pip` también instalará sus dependencias necesarias.
-Matplotlib queda para la futura implementación de gráficos y no se requiere
-para importar los esqueletos ni ejecutar las pruebas actuales.
+son `pytest`, `numpy` y `matplotlib`. Matplotlib genera los PNG de constelación.
 
 Para salir de un entorno activado:
 

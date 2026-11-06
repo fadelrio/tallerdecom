@@ -69,7 +69,7 @@ def test_report_rejects_misaligned_histogram(counts: list[int], probabilities: l
         )
 
 
-@pytest.mark.parametrize("kind", ["pam", "fsk", "histogram"])
+@pytest.mark.parametrize("kind", ["pam", "fsk", "fsk_received", "histogram"])
 def test_plot_creates_png(kind: str, tmp_path: Path) -> None:
     """La futura presentación guardará un PNG válido sin ventanas interactivas."""
     path = tmp_path / f"{kind}.png"
@@ -79,7 +79,8 @@ def test_plot_creates_png(kind: str, tmp_path: Path) -> None:
     else:
         symbols = np.array([[-1.0], [1.0]]) if kind == "pam" else np.eye(4)
         labels = ["0", "1"] if kind == "pam" else ["00", "01", "11", "10"]
-        result = available(plot_constellation, Constellation(symbols, labels), path)
+        received = 0.75 * symbols + 0.1 if kind == "fsk_received" else None
+        result = available(plot_constellation, Constellation(symbols, labels), path, received_symbols=received)
     assert result is None
     data = path.read_bytes()
     assert data[:8] == b"\x89PNG\r\n\x1a\n"
