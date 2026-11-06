@@ -225,12 +225,12 @@ class ErrorRates:
 
 @dataclass
 class BitErrorRate:
-    """Resultado de comparar la fuente original y la recibida.
+    """Resultado de comparar los bits transmitidos y recibidos.
 
     Attributes:
-        error_rate: Frecuencia de bits distintos, entre cero y uno.
-        total_bits: Cantidad de bits comparados.
-        differing_bits: Cantidad de bits distintos.
+        error_rate: Fracción de posiciones con error, entre cero y uno.
+        bits_vistos: Longitud de la secuencia más larga.
+        bits_errados: Cantidad de bits distintos o sin contraparte.
     """
 
     error_rate: float

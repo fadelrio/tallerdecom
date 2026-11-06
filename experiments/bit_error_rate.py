@@ -1,6 +1,6 @@
 """
 
-IMPORTANTE: CORRER CON ESTE COMANDO: python -m experiments.experimento_PAM
+IMPORTANTE: CORRER CON ESTE COMANDO: python -m experiments.bit_error_rate
 
 """
 
@@ -63,7 +63,9 @@ def run_experiment(config: SimulationConfig) -> None:
     datos_demodulados = demodulation(datos_canal, modulacion_config)
 
     encoded_bits_receiver = EncodedSource(bits=datos_demodulados.bits)
-    error_rate = estimate_bit_error_rate(encoded_bits_source.bits, encoded_bits_receiver.bits)
+    measured_ber = estimate_bit_error_rate(encoded_bits_source.bits, encoded_bits_receiver.bits)
+    print(f"- BER medida: {measured_ber.error_rate:.12g}")
+    print(f"- Bits errados: {measured_ber.bits_errados} de {measured_ber.bits_vistos}")
     received = decode_source(encoded_bits_receiver, huffman.codebook)
 
     try:

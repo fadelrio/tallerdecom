@@ -100,8 +100,8 @@ def run_modulation_simulation(
         ValueError: Si la configuración o Eb/N0 son inválidos.
 
     Notes:
-        El demodulador retira el relleno; no volver a quitarlo aquí. Las
-        funciones de cálculo siguen en sus módulos. No oculta sus pendientes
+        La BER medida cuenta los bits descartados al modular. Las funciones
+        de cálculo siguen en sus módulos. No oculta sus pendientes
         ni modifica la CLI del apartado B. No incorpora codificación de canal.
         Los gráficos se llaman <salida>.constellation.png y
         <salida>.histogram.png. El directorio de salida debe existir.
@@ -144,11 +144,12 @@ def run_modulation_simulation(
     received = demodulation(transmitted, modulation_config)
     estimated_energy = estimate_energies(transmitted.symbols, modulation_config)
     reference_energy = theoretical_energies(modulation_config)
+    measured_ber = estimate_bit_error_rate(encoded.bits, received.bits)
     estimated_errors = ErrorRates(
         symbol_error_rate=estimate_symbol_error_rate(
             transmitted.symbols, received.symbols,
         ),
-        bit_error_rate=estimate_bit_error_rate(encoded.bits, received.bits),
+        bit_error_rate=measured_ber.error_rate,
     )
     reference_errors = theoretical_error_rates(modulation_config, eb_n0_db)
     statistics = symbol_statistics(transmitted, constellation)
@@ -171,8 +172,9 @@ def run_modulation_simulation(
     print(f"- Salida: <code>{escape(str(config.output_file))}</code>")
     print("- Transmisión simulada: sin ruido.")
     print(f"- Referencia teórica AWGN: Eb/N0 = {eb_n0_db:.12g} dB.")
-    print(f"- Bits transmitidos: {len(encoded.bits)}")
-    print(f"- Bits de relleno: {transmitted.padding_bits}\n")
+    print(f"- Bits antes de modular: {len(encoded.bits)}")
+    print(f"- Se descartaron bits al modular: {'sí' if transmitted.flag_descarte else 'no'}")
+    print(f"- Bits errados: {measured_ber.bits_errados} de {measured_ber.bits_vistos}\n")
     print(report)
     print(f"- Constelación: <code>{escape(str(constellation_file))}</code>")
     print(f"- Histograma: <code>{escape(str(histogram_file))}</code>")

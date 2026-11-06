@@ -4,13 +4,17 @@ from common.data_types import ChannelConfig, ModulatedData
 from config import ModulationConfig
 import numpy as np
 
-def channel_effects(datos_modulados: ModulatedData, config: ModulationConfig, channel_config: ChannelConfig) -> ModulatedData:
+def channel_effects(
+    datos_modulados: ModulatedData, config: ModulationConfig, channel_config: ChannelConfig,
+    *, rng: np.random.Generator | None = None,
+) -> ModulatedData:
     """Aplica los efectos del canal a los datos modulados.
 
     Args:
         datos_modulados: Datos modulados.
         config: Configuración de modulación.
         channel_config: Configuración del canal.
+        rng: Generador opcional para repetir la realización de ruido.
     
     Returns: 
         Datos modulados con ruido aplicado.
@@ -21,7 +25,8 @@ def channel_effects(datos_modulados: ModulatedData, config: ModulationConfig, ch
     N0 = channel_config.N0
 
     # Generar ruido gaussiano con media 0 y varianza especificada
-    ruido = np.random.normal(0, np.sqrt(N0/2), datos_modulados.symbols.shape)
+    normal = np.random.normal if rng is None else rng.normal
+    ruido = normal(0, np.sqrt(N0/2), datos_modulados.symbols.shape)
 
     # Aplicar el ruido a los símbolos modulados
     simbolos_con_ruido = datos_modulados.symbols + ruido

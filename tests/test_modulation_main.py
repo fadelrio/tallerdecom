@@ -8,7 +8,7 @@ import pytest
 
 import main as application
 from common.data_types import (
-    Constellation, DemodulatedData, EnergyStatistics, ErrorRates,
+    BitErrorRate, Constellation, DemodulatedData, EnergyStatistics, ErrorRates,
     ModulatedData, SymbolStatistics,
 )
 from config import ModulationConfig, SimulationConfig
@@ -26,9 +26,9 @@ def pipeline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict:
         np.array([[-1.897366596101], [-0.632455532034], [0.632455532034], [1.897366596101]]),
         ["00", "01", "11", "10"],
     )
-    transmitted = ModulatedData(np.array([[-1.897366596101], [-1.897366596101]]), 1)
-    decided = DemodulatedData(transmitted.symbols.copy(), "000")
-    statistics = SymbolStatistics(constellation.labels, np.array([2, 0, 0, 0]), np.array([1.0, 0.0, 0.0, 0.0]))
+    transmitted = ModulatedData(np.array([[-1.897366596101]]), flag_descarte=True)
+    decided = DemodulatedData(transmitted.symbols.copy(), "00")
+    statistics = SymbolStatistics(constellation.labels, np.array([1, 0, 0, 0]), np.array([1.0, 0.0, 0.0, 0.0]))
     values = {
         "build_constellation": constellation,
         "modulation": transmitted,
@@ -36,7 +36,7 @@ def pipeline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict:
         "estimate_energies": EnergyStatistics(3.6, 1.8, 1.8),
         "theoretical_energies": EnergyStatistics(2.0, 1.0, 1.0),
         "estimate_symbol_error_rate": 0.0,
-        "estimate_bit_error_rate": 0.0,
+        "estimate_bit_error_rate": BitErrorRate(1 / 3, 3, 1),
         "theoretical_error_rates": ErrorRates(0.125, 0.0625),
         "symbol_statistics": statistics,
         "plot_constellation": None,
@@ -50,28 +50,30 @@ def pipeline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict:
 
 
 def test_orchestration_uses_received_bits_and_all_blocks(pipeline: dict, capsys: pytest.CaptureFixture[str]) -> None:
-    """Conecta los bloques y no elimina por segunda vez el bit de relleno."""
+    """Informa la BER del bloque truncado y decodifica los bits recuperados."""
     paths = pipeline["paths"]
     mocks = pipeline["mocks"]
     values = pipeline["values"]
     config = ModulationConfig(4, "PAM")
     assert run_modulation_simulation(paths, config, eb_n0_db=7.5) is None
-    assert paths.output_file.read_bytes() == paths.input_file.read_bytes()
+    assert paths.output_file.read_text(encoding="utf-8") == "ññ"
     assert mocks["modulation"].call_args.args[0].bits == "000"
     mocks["build_constellation"].assert_called_once_with(config)
     mocks["demodulation"].assert_called_once_with(values["modulation"], config)
     mocks["estimate_energies"].assert_called_once_with(values["modulation"].symbols, config)
     mocks["theoretical_energies"].assert_called_once_with(config)
     mocks["estimate_symbol_error_rate"].assert_called_once_with(values["modulation"].symbols, values["demodulation"].symbols)
-    mocks["estimate_bit_error_rate"].assert_called_once_with("000", "000")
+    mocks["estimate_bit_error_rate"].assert_called_once_with("000", "00")
     mocks["theoretical_error_rates"].assert_called_once_with(config, 7.5)
     mocks["symbol_statistics"].assert_called_once_with(values["modulation"], values["build_constellation"])
     mocks["plot_constellation"].assert_called_once_with(values["build_constellation"], paths.output_file.with_name("recibido.txt.constellation.png"))
     mocks["plot_symbol_histogram"].assert_called_once_with(values["symbol_statistics"], paths.output_file.with_name("recibido.txt.histogram.png"))
     output = capsys.readouterr().out
     assert "sin ruido" in output and "Eb/N0 = 7.5 dB" in output
-    assert "Bits de relleno: 1" in output and "Texto idéntico: True" in output
+    assert "Se descartaron bits al modular: sí" in output and "Texto idéntico: False" in output
+    assert "Bits errados: 1 de 3" in output
     assert "| SER | 0.125 | 0 |" in output
+    assert "| BER | 0.0625 | 0.333333333333 |" in output
 
 
 def test_orchestration_default_reference(pipeline: dict) -> None:

@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from common.data_types import (
-    Constellation, DemodulatedData, EncodedSource, EnergyStatistics,
+    BitErrorRate, Constellation, DemodulatedData, EncodedSource, EnergyStatistics,
     ErrorRates, ModulatedData, SymbolStatistics,
 )
 from config import ModulationConfig, SimulationConfig, load_modulation_config
@@ -34,7 +34,7 @@ CONTRACTS = (
     ("common.modulation_metrics", "estimate_energies", {"symbols": np.ndarray, "config": ModulationConfig, "return": EnergyStatistics}),
     ("common.modulation_metrics", "theoretical_energies", {"config": ModulationConfig, "return": EnergyStatistics}),
     ("common.modulation_metrics", "estimate_symbol_error_rate", {"transmitted": np.ndarray, "decided": np.ndarray, "return": float}),
-    ("common.modulation_metrics", "estimate_bit_error_rate", {"transmitted": str, "received": str, "return": float}),
+    ("common.modulation_metrics", "estimate_bit_error_rate", {"transmitted": str, "received": str, "return": BitErrorRate}),
     ("common.modulation_metrics", "theoretical_error_rates", {"config": ModulationConfig, "eb_n0_db": float, "return": ErrorRates}),
     ("common.modulation_metrics", "symbol_statistics", {"modulated": ModulatedData, "constellation": Constellation, "return": SymbolStatistics}),
     ("common.modulation_plots", "plot_constellation", {"constellation": Constellation, "output_file": Path, "received_symbols": np.ndarray | None, "return": type(None)}),

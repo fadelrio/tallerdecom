@@ -5,7 +5,7 @@ from math import erfc, sqrt
 import numpy as np
 import pytest
 
-from common.data_types import Constellation, EnergyStatistics, ModulatedData
+from common.data_types import BitErrorRate, Constellation, EnergyStatistics, ModulatedData
 from common.modulation_metrics import (
     estimate_bit_error_rate, estimate_energies, estimate_symbol_error_rate,
     symbol_statistics, theoretical_energies, theoretical_error_rates,
@@ -73,18 +73,22 @@ def test_invalid_ser_vectors(transmitted: np.ndarray, decided: np.ndarray) -> No
 
 
 @pytest.mark.parametrize("transmitted,received,expected", [
-    ("0101", "0101", 0.0), ("0101", "1010", 1.0), ("0101", "0111", 0.25),
+    ("0101", "0101", BitErrorRate(0.0, 4, 0)),
+    ("0101", "1010", BitErrorRate(1.0, 4, 4)),
+    ("0101", "0111", BitErrorRate(0.25, 4, 1)),
+    ("0101", "011", BitErrorRate(0.5, 4, 2)),
+    ("01", "011", BitErrorRate(1 / 3, 3, 1)),
 ])
-def test_known_ber(transmitted: str, received: str, expected: float) -> None:
-    """Los resultados se especifican manualmente y corresponden a bits sin relleno."""
-    assert available(estimate_bit_error_rate, transmitted, received) == expected
+def test_known_ber(transmitted: str, received: str, expected: BitErrorRate) -> None:
+    """Verifica la tasa y los conteos con errores de valor y de longitud."""
+    assert estimate_bit_error_rate(transmitted, received) == expected
 
 
-@pytest.mark.parametrize("transmitted,received", [("", ""), ("01", "0"), ("02", "01"), ("01", "0a")])
+@pytest.mark.parametrize("transmitted,received", [("", ""), ("01", ""), ("02", "01"), ("01", "0a")])
 def test_invalid_ber_vectors(transmitted: str, received: str) -> None:
-    """La comparación debe exigir dos cadenas binarias no vacías de igual largo."""
+    """La comparación exige dos cadenas binarias no vacías."""
     with pytest.raises(ValueError):
-        available(estimate_bit_error_rate, transmitted, received)
+        estimate_bit_error_rate(transmitted, received)
 
 
 @pytest.mark.parametrize("tipo,expected", [("PAM", 0.078649603525), ("FSK", 0.158655253931)])

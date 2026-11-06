@@ -18,9 +18,6 @@
 
 ## Modulación: estado de los archivos
 
-La simulación completa todavía requiere las estadísticas de símbolos, su
-gráfico y la integración de las métricas estimadas.
-
 - `constellations.py` contiene `build_constellation(config)`. Devuelve coordenadas
   `(M, 1)` para PAM o `(M, M)` para FSK ortogonal coherente. El etiquetado
   Gray o binario sigue el orden de los niveles PAM o de los ejes FSK. La tabla
@@ -28,11 +25,12 @@ gráfico y la integración de las métricas estimadas.
 - `modulation_metrics.py` contiene `theoretical_error_rates` para SER y BER en
   AWGN. En PAM pondera las transiciones entre regiones por la distancia de
   Hamming. En FSK ortogonal calcula la SER mediante cuadratura y usa la
-  simetría para obtener la BER. Falta `symbol_statistics`.
+  simetría para obtener la BER. `symbol_statistics` cuenta las apariciones
+  de cada símbolo y conserva las etiquetas sin observaciones.
 - `modulation_plots.py` contiene `plot_constellation`. Guarda un PNG con
   etiquetas, regiones y una superposición opcional de muestras recibidas.
   FSK de más de dos dimensiones se muestra en un corte ortonormal.
-  Falta `plot_symbol_histogram`.
+  `plot_symbol_histogram` grafica conteos y frecuencias e indica la referencia 1/M.
 - `modulation_report.py`: `format_modulation_report` implementado. Recibe
   configuración, energías y errores teóricos/estimados y estadísticas;
   devuelve Markdown con tablas y unidades, sin calcular métricas ni escribir

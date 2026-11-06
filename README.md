@@ -20,8 +20,8 @@ bits Huffman → modulación → coordenadas → demodulación → bits sin rell
 → decodificación Huffman → texto
 ```
 
-El orquestador todavía requiere integrar las métricas y el histograma.
-`main` y la CLI ejecutan el flujo B. El canal AWGN se usa en los experimentos.
+`main` y la CLI ejecutan el flujo B. El orquestador de modulación mide energías,
+errores y frecuencias de símbolos. El canal AWGN se usa en los experimentos.
 
 Se conservan mayúsculas, acentos, espacios, controles, BOM y saltos CR/LF/CRLF.
 No se normaliza Unicode: `é` y `e` seguido de acento combinante son secuencias
@@ -116,14 +116,14 @@ los enumera; el recorrido Huffman sigue funcionando con Unicode. El total
 - [x] Orquestación sin ruido, probada con sustitutos de las dependencias pendientes.
 - [x] Constelación compartida con etiquetado configurable y ajuste de energía por tasa.
 - [x] SER y BER teóricas en AWGN y gráfico con etiquetas y regiones de decisión.
-- [ ] Conservar los bits finales cuando no completan un símbolo.
-- [ ] Revisar las energías y la BER medida, y completar las frecuencias por símbolo y su gráfico.
-- [ ] Completar las dependencias para ejecutar la simulación real de punta a punta.
+- [x] BER medida con conteos de bits errados, incluyendo los descartados al modular.
+- [x] Energías teóricas y estimadas, frecuencias por símbolo e histograma.
+- [x] Datos de D y E, con una corrida reproducible de AWGN a 6 dB.
 
 ### Otras etapas futuras
 
 - [ ] Codificación y decodificación de canal.
-- [ ] Integrar AWGN y completar los efectos del canal.
+- [ ] Análisis de desempeño con el barrido del apartado F.
 
 ## Ejecución y tests
 
@@ -164,6 +164,8 @@ Las coordenadas son matrices reales `(N, D)` en bases ortonormales: `D=1`
 para PAM y `D=M` para FSK ortogonal coherente. `Constellation` asocia filas
 con etiquetas. El modulador indica el descarte de bits con `flag_descarte`.
 El demodulador devuelve los símbolos decididos y sus bits.
+La BER medida cuenta como error cada bit sin contraparte y usa como denominador
+la longitud de la secuencia más larga. El informe muestra la tasa y los conteos.
 Las decisiones empatadas elegirán la primera fila de la constelación.
 
 `EnergyStatistics` distingue energía de símbolo, de bit de canal y de bit de
@@ -202,6 +204,19 @@ rates = [theoretical_error_rates(config, db) for db in range(11)]
 del canal. En FSK de más de dos dimensiones, el gráfico muestra las regiones
 en un corte ortonormal por el origen y proyecta las muestras en ese plano.
 
+## Datos para los apartados D y E
+
+Desde la raíz del repositorio, con las dependencias de `requirements.txt`:
+
+```bash
+python -m experiments.modulation_data
+```
+
+Genera [el Markdown de datos](res/modulation_info.md) y sus tres PNG en `res/`.
+La tabla cubre PAM y FSK con M = 2, 4, 8 y 16. Para los gráficos y la corrida
+con AWGN a 6 dB se usa 4-PAM Gray sobre `res/textito.txt`. Se puede cambiar la
+muestra con `--input`, `--tipo` y `--orden`, y el destino con `--output`.
+
 ## Uso de la orquestación de modulación
 
 La llamada compatible con dos argumentos sigue disponible. El parámetro
@@ -217,19 +232,10 @@ run_modulation_simulation(
 )
 ```
 
-El recorrido completo todavía depende de las estadísticas y el gráfico del
-histograma y de la integración de las métricas estimadas.
-
-Cuando los bloques estén implementados, se guardarán `<salida>.constellation.png`
-y `<salida>.histogram.png` junto al archivo recibido; el directorio debe existir.
-El Markdown se imprime por consola. Los errores de E/S se informan y las
-dependencias pendientes propagan `NotImplementedError`.
+Se guardan `<salida>.constellation.png` y `<salida>.histogram.png` junto al
+archivo recibido. El directorio debe existir. El Markdown se imprime por
+consola y se informan los errores de E/S.
 Esta entrada admite Gray y tasa 1.0.
-
-## Funciones pendientes del apartado
-
-- `common/modulation_metrics.py`: `symbol_statistics`.
-- `common/modulation_plots.py`: `plot_symbol_histogram`.
 
 ## Mantenimiento
 

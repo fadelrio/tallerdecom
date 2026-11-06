@@ -1,8 +1,8 @@
 """Energías y tasas de error de modulación."""
 
-from math import erfc, exp, expm1, isfinite, log, log1p, pi, sqrt
+from itertools import zip_longest
+from math import erfc, exp, expm1, isfinite, log, log1p, log2, pi, sqrt
 from numbers import Real
-from itertools import zip_longest 
 
 import numpy as np
 
@@ -10,13 +10,13 @@ from common.constellations import build_constellation
 from common.data_types import (
     Constellation, EnergyStatistics, ErrorRates, ModulatedData, SymbolStatistics, BitErrorRate
 )
-from config import ModulationConfig
+from config import ModulationConfig, validate_modulation_config
 
 
 def estimate_energies(
     symbols: np.ndarray, config: ModulationConfig,
 ) -> EnergyStatistics:
-    """Estimará las energías medias de la secuencia transmitida.
+    """Estima las energías medias de la secuencia transmitida.
 
     Args:
         symbols: Coordenadas reales no vacías (N, D), incluyendo el símbolo final.
@@ -26,52 +26,29 @@ def estimate_energies(
         Energías medias por símbolo, bit de canal y bit de información.
 
     Raises:
-        NotImplementedError: Mientras la estimación esté pendiente.
-        ValueError: En la futura implementación, para vacío, dimensiones o
-            configuración inválidas, o coordenadas no finitas.
+        ValueError: Para una muestra vacía, dimensiones incompatibles o
+            coordenadas inválidas.
 
     Notes:
         Usar la energía en una base ortonormal. No suponer equiprobabilidad en
         la muestra ni forzar el resultado al Eb nominal de la configuración.
     """
 
+    validate_modulation_config(config)
     symbols = np.asarray(symbols)
+    dimension = 1 if config.tipo == "PAM" else config.M
+    if symbols.ndim != 2 or symbols.shape[0] == 0 or symbols.shape[1] != dimension:
+        raise ValueError("La muestra debe ser una matriz no vacía con la dimensión del esquema.")
+    if symbols.dtype.kind not in "iuf" or not np.isfinite(symbols).all():
+        raise ValueError("Las coordenadas deben ser reales y finitas.")
 
-    # Validar que la secuencia no esté vacía y tenga dos dimensiones.
-    if symbols.ndim != 2 or symbols.shape[0] == 0 or symbols.shape[1] == 0:
-        raise ValueError("La secuencia debe ser una matriz no vacía (N, D).")
-
-    # Validar que las coordenadas sean finitas.
-    if not np.all(np.isfinite(symbols)):
-        raise ValueError("Las coordenadas deben ser finitas.")
-
-    # Obtener los parámetros de la configuración.
-    M = config.M
-    Rc = config.code_rate
-
-    if M <= 1 or Rc <= 0 or Rc > 1:
-        raise ValueError("Configuración de modulación o tasa de código inválida.")
-
-    # Energía media por símbolo.
-    Es = np.mean(np.sum(symbols**2, axis=1))
-
-    # Energía media por bit de canal e información.
-    bits_por_simbolo = np.log2(M)
-    
-    #Ec = Es / bits_por_simbolo A completar después
-    Ec = 1.0
-
-    Eb = Es / bits_por_simbolo
-
-    return EnergyStatistics(
-        symbol_energy=float(Es),
-        channel_bit_energy=float(Ec),
-        bit_energy=float(Eb),
-    ) 
+    symbol_energy = float(np.mean(np.sum(np.square(symbols, dtype=float), axis=1)))
+    channel_bit_energy = symbol_energy / log2(config.M)
+    return EnergyStatistics(symbol_energy, channel_bit_energy, channel_bit_energy / config.code_rate)
 
 
 def theoretical_energies(config: ModulationConfig) -> EnergyStatistics:
-    """Obtendrá la referencia energética para símbolos equiprobables.
+    """Calcula la referencia energética para símbolos equiprobables.
 
     Args:
         config: Orden, energía de información y tasa de código.
@@ -80,36 +57,15 @@ def theoretical_energies(config: ModulationConfig) -> EnergyStatistics:
         Energías teóricas por símbolo, bit de canal y bit de información.
 
     Raises:
-        NotImplementedError: Mientras la referencia esté pendiente.
-        ValueError: En la futura implementación, para configuración inválida.
+        ValueError: Para una configuración inválida.
 
     Notes:
         Diferenciar Eb de información y Ec del flujo de canal. Una muestra
         PAM no equiprobable puede diferir de esta referencia.
     """
-    M = config.M
-    Eb = config.Eb
-    Rc = config.code_rate
-
-    # Validar la configuración.
-    if M <= 1 or not np.log2(M).is_integer():
-        raise ValueError("M debe ser una potencia de 2 mayor que 1.")
-
-    if not np.isfinite(Eb) or Eb <= 0:
-        raise ValueError("Eb debe ser un valor positivo y finito.")
-
-    if not np.isfinite(Rc) or Rc <= 0 or Rc > 1:
-        raise ValueError("La tasa de código debe estar entre 0 y 1.")
-
-    # Energías medias por bit de canal y por símbolo.
-    Ec = Eb * Rc
-    Es = Eb * np.log2(M)
-
-    return EnergyStatistics(
-        symbol_energy=float(Es),
-        channel_bit_energy=float(Ec),
-        bit_energy=float(Eb),
-    )
+    validate_modulation_config(config)
+    channel_bit_energy = float(config.Eb * config.code_rate)
+    return EnergyStatistics(channel_bit_energy * log2(config.M), channel_bit_energy, float(config.Eb))
 
     
 def estimate_symbol_error_rate(
@@ -162,8 +118,8 @@ def estimate_symbol_error_rate(
 
     return float(np.mean(errores))
 
-def estimate_bit_error_rate(transmitted: str, received: str) -> BitErrorRate:    
-    # Las cadenas pueden tener diferentes longitudes. Contamos los bits descartados como errores.
+
+def estimate_bit_error_rate(transmitted: str, received: str) -> BitErrorRate:
     """Compara las secuencias binarias transmitida y recibida.
 
     Args:
@@ -171,15 +127,16 @@ def estimate_bit_error_rate(transmitted: str, received: str) -> BitErrorRate:
         received: Bits recibidos.
 
     Returns:
-        Frecuencia de bits distintos, entre cero y uno.
+        Tasa de error, cantidad de posiciones evaluadas y cantidad de errores.
 
     Raises:
-        NotImplementedError: Mientras la comparación esté pendiente.
-        ValueError: En la futura implementación, para vacío, longitudes
-            diferentes o caracteres distintos de '0' y '1'.
+        ValueError: Si alguna secuencia está vacía o contiene caracteres
+            distintos de '0' y '1'.
 
     Notes:
-        Comparar flujos de la misma etapa, antes de decodificar Huffman.
+        Compara flujos de la misma etapa, antes de decodificar Huffman.
+        Cada bit sin contraparte cuenta como error. La longitud de la secuencia
+        más larga es el denominador.
     """
     # Validar que las secuencias no estén vacías.
     if not transmitted or not received:
@@ -300,7 +257,7 @@ def _orthogonal_fsk_ser(order: int, sqrt_es_n0: float) -> float:
 def symbol_statistics(
     modulated: ModulatedData, constellation: Constellation,
 ) -> SymbolStatistics:
-    """Preparará los conteos y frecuencias de los símbolos transmitidos.
+    """Calcula los conteos y frecuencias de los símbolos transmitidos.
 
     Args:
         modulated: Símbolos transmitidos (N, D), incluyendo el símbolo final.
@@ -311,11 +268,33 @@ def symbol_statistics(
         incluyendo ceros para símbolos no observados.
 
     Raises:
-        NotImplementedError: Mientras el histograma esté pendiente.
-        ValueError: En la futura implementación, para muestra vacía,
-            constelación incompatible o símbolos ajenos a ella.
+        ValueError: Para una muestra vacía, una constelación incompatible
+            o símbolos ajenos a ella.
 
     Notes:
         No asumir equiprobabilidad ni emitir conclusiones sobre el histograma.
     """
-    raise NotImplementedError("Estadísticas de símbolos pendientes.")
+    samples = np.asarray(modulated.symbols)
+    points = np.asarray(constellation.symbols)
+    if (
+        samples.ndim != 2 or samples.size == 0 or points.ndim != 2
+        or points.size == 0 or points.shape[1] != samples.shape[1]
+        or len(points) != len(constellation.labels)
+    ):
+        raise ValueError("La muestra y la constelación deben ser matrices compatibles y no vacías.")
+    if points.dtype.kind not in "iuf" or not np.isfinite(points).all():
+        raise ValueError("Las coordenadas de la constelación deben ser reales y finitas.")
+    if samples.dtype.kind not in "iuf" or not np.isfinite(samples).all():
+        raise ValueError("Las coordenadas de la muestra deben ser reales y finitas.")
+
+    point_indices = {tuple(point): index for index, point in enumerate(points)}
+    if len(point_indices) != len(points) or len(set(constellation.labels)) != len(points):
+        raise ValueError("La constelación debe tener coordenadas y etiquetas únicas.")
+
+    counts = np.zeros(len(points), dtype=int)
+    try:
+        for sample in samples:
+            counts[point_indices[tuple(sample)]] += 1
+    except KeyError as error:
+        raise ValueError("La muestra contiene un símbolo ajeno a la constelación.") from error
+    return SymbolStatistics(list(constellation.labels), counts, counts / len(samples))

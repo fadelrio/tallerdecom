@@ -113,21 +113,48 @@ def _coordinate_matrix(values: np.ndarray) -> np.ndarray:
 def plot_symbol_histogram(
     statistics: SymbolStatistics, output_file: Path,
 ) -> None:
-    """Guardará cantidades y frecuencias por símbolo de modulación.
+    """Guarda cantidades y frecuencias por símbolo de modulación.
 
     Args:
         statistics: Etiquetas, conteos y probabilidades ya preparados.
         output_file: Ruta PNG; el directorio padre debe existir.
 
     Returns:
-        None; el resultado futuro será el archivo indicado.
+        None; el gráfico se escribe en el archivo indicado.
 
     Raises:
-        NotImplementedError: Mientras el gráfico esté pendiente.
-        ValueError: En la futura implementación, para datos incompatibles.
+        ValueError: Para etiquetas, cantidades o probabilidades incompatibles.
 
     Notes:
         Presentar ambas magnitudes sin volver a calcularlas ni concluir que
         la fuente es equiprobable. No abrir ventanas interactivas.
     """
-    raise NotImplementedError("Gráfico de histograma pendiente.")
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+    from matplotlib.figure import Figure
+    from matplotlib.ticker import MaxNLocator
+
+    labels = statistics.labels
+    counts = np.asarray(statistics.counts)
+    probabilities = np.asarray(statistics.probabilities)
+    if (
+        not labels or len(set(labels)) != len(labels)
+        or counts.shape != (len(labels),) or probabilities.shape != counts.shape
+        or counts.dtype.kind not in "iu" or (counts < 0).any()
+        or probabilities.dtype.kind not in "iuf" or not np.isfinite(probabilities).all()
+        or ((probabilities < 0) | (probabilities > 1)).any()
+    ):
+        raise ValueError("Los conteos y probabilidades deben ser válidos y coincidir con las etiquetas.")
+
+    figure = Figure(figsize=(8, 6), layout="constrained")
+    FigureCanvasAgg(figure)
+    counts_axes, probabilities_axes = figure.subplots(2, 1, sharex=True)
+    counts_axes.bar(labels, counts, color="tab:blue")
+    counts_axes.set(title="Símbolos transmitidos", ylabel="Cantidad")
+    counts_axes.yaxis.set_major_locator(MaxNLocator(integer=True))
+    probabilities_axes.bar(labels, probabilities, color="tab:blue")
+    probabilities_axes.axhline(
+        1 / len(labels), color="0.35", linestyle="--", label="Referencia equiprobable (1/M)",
+    )
+    probabilities_axes.set(xlabel="Etiqueta del símbolo", ylabel="Frecuencia relativa")
+    probabilities_axes.legend()
+    figure.savefig(output_file, format="png", dpi=140)
