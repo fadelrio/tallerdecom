@@ -1,5 +1,7 @@
 """Referencias manuales de energías, errores e histograma para implementar luego."""
 
+from math import erfc, sqrt
+
 import numpy as np
 import pytest
 
@@ -91,6 +93,25 @@ def test_binary_awgn_reference(tipo: str, expected: float) -> None:
     result = available(theoretical_error_rates, ModulationConfig(2, tipo), 0.0)
     assert result.symbol_error_rate == pytest.approx(expected)
     assert result.bit_error_rate == pytest.approx(expected)
+
+
+def test_four_pam_ber_depends_on_labeling() -> None:
+    """Compara las expresiones de 4-PAM Gray y binario a 0 dB."""
+    gray = theoretical_error_rates(ModulationConfig(4, "PAM"), 0.0)
+    binary = theoretical_error_rates(ModulationConfig(4, "PAM", labeling="binary"), 0.0)
+    q1, q3, q5 = (erfc(i * sqrt(0.4)) / 2 for i in (1, 3, 5))
+    assert gray.symbol_error_rate == binary.symbol_error_rate == pytest.approx(1.5 * q1)
+    assert gray.bit_error_rate == pytest.approx((3 * q1 + 2 * q3 - q5) / 4)
+    assert binary.bit_error_rate == pytest.approx((4 * q1 - q3 + q5) / 4)
+
+
+def test_four_fsk_coherent_awgn_reference() -> None:
+    """Contrasta 4-FSK a 0 dB con la integral por trapecios de la referencia."""
+    gray = theoretical_error_rates(ModulationConfig(4, "FSK"), 0.0)
+    binary = theoretical_error_rates(ModulationConfig(4, "FSK", labeling="binary"), 0.0)
+    assert gray == binary
+    assert gray.symbol_error_rate == pytest.approx(0.177207044007, rel=1e-9)
+    assert gray.bit_error_rate == pytest.approx(0.118138029338, rel=1e-9)
 
 
 @pytest.mark.parametrize("eb_n0_db", [float("nan"), float("inf"), float("-inf")])

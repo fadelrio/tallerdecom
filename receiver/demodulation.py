@@ -1,5 +1,6 @@
 """Contratos de demodulación; las decisiones quedan por implementar."""
 
+from common.constellations import build_constellation
 from common.data_types import DemodulatedData, ModulatedData
 from config import ModulationConfig
 import numpy as np
@@ -58,17 +59,18 @@ def demodulation_PAM(
         elegir la primera fila de la constelación. Admitir entrada vacía válida.
         No decodificar Huffman ni comparar directamente coordenadas con ruido.
     """
+    constellation = build_constellation(config)
     simbolos_ruidosos = modulated.symbols
     simbolo_decidido = []
     bits = ""
     for symbol in simbolos_ruidosos:
-        distances = [abs(symbol - s) for s in config.constelacion]# Calcular la distancia a cada símbolo de la constelación
+        distances = [abs(symbol - s) for s in constellation.symbols]# Calcular la distancia a cada símbolo de la constelación
         
         closest_index = distances.index(min(distances))# Encontrar el índice del símbolo más cercano
 
-        simbolo_decidido.append(config.constelacion[closest_index])# Obtener el símbolo más cercano de la constelación
+        simbolo_decidido.append(constellation.symbols[closest_index])
         
-        bits += config.etiquetas[closest_index]# Obtener la etiqueta correspondiente
+        bits += constellation.labels[closest_index]
 
     simbolo_decidido = np.array(simbolo_decidido)  # Convertir la lista de símbolos decididos a un array de NumPy
     
@@ -95,17 +97,18 @@ def demodulation_FSK(
         Usar la constelación común. En empates elegir su primera fila.
         Admitir entrada vacía válida. No sintetizar ni procesar portadoras.
     """
+    constellation = build_constellation(config)
     symbolos_ruidosos = modulated.symbols
     simbolo_decidido = []
     bits = ""
     for symbol in symbolos_ruidosos:
-        distances = [np.linalg.norm(symbol - s) for s in config.constelacion]# Calcular la distancia a cada símbolo de la constelación
+        distances = [np.linalg.norm(symbol - s) for s in constellation.symbols]# Calcular la distancia a cada símbolo de la constelación
         
         closest_index = distances.index(min(distances))# Encontrar el índice del símbolo más cercano
 
-        simbolo_decidido.append(config.constelacion[closest_index])# Obtener el símbolo más cercano de la constelación
+        simbolo_decidido.append(constellation.symbols[closest_index])
         
-        bits += config.etiquetas[closest_index]# Obtener la etiqueta correspondiente
+        bits += constellation.labels[closest_index]
 
     simbolo_decidido = np.array(simbolo_decidido)  # Convertir la lista de símbolos decididos a un array de NumPy
 

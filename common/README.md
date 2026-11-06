@@ -18,27 +18,21 @@
 
 ## Modulación: estado de los archivos
 
-El informe ya está implementado. Los demás archivos conservan interfaces con
-`NotImplementedError`. La entrada `main.run_modulation_simulation` ya los
-conecta, pero no puede completar una ejecución real hasta implementarlos.
+La simulación completa todavía requiere las estadísticas de símbolos, su
+gráfico y la integración de las métricas estimadas.
 
-- `constellations.py`: implementar `build_constellation(config)`. Devolver
-  coordenadas `(M, 1)` para PAM o `(M, M)` para FSK ortogonal coherente, con
-  etiquetas Gray/binarias por fila. Ordenar niveles PAM de menor a mayor y
-  FSK por eje de base. Aplicar energía y tasa de canal. Esta tabla deberá
-  ser compartida por transmisión, recepción y gráficos.
-- `modulation_metrics.py`: implementar `estimate_energies` y
-  `theoretical_energies`, distinguiendo Es, Ec y Eb; `estimate_symbol_error_rate`
-  sobre símbolos transmitidos/decididos, `estimate_bit_error_rate` sobre bits
-  sin relleno y `theoretical_error_rates(config, eb_n0_db)` para referencias
-  en AWGN. Implementar también `symbol_statistics`, incluyendo símbolos de
-  conteo cero. No suponer equiprobabilidad en las muestras observadas.
-- `modulation_plots.py`: implementar `plot_constellation` con etiquetas y
-  regiones, y `plot_symbol_histogram` con cantidades y probabilidades ya
-  calculadas. Guardar PNG en la ruta recibida, cuyo directorio padre existe,
-  sin abrir ventanas. Para FSK de dimensión mayor que tres explicar qué
-  proyección o representación se muestra. Matplotlib será una dependencia
-  futura: no se importa ni se necesita para los contratos actuales.
+- `constellations.py` contiene `build_constellation(config)`. Devuelve coordenadas
+  `(M, 1)` para PAM o `(M, M)` para FSK ortogonal coherente. El etiquetado
+  Gray o binario sigue el orden de los niveles PAM o de los ejes FSK. La tabla
+  se comparte entre transmisión, recepción y gráficos.
+- `modulation_metrics.py` contiene `theoretical_error_rates` para SER y BER en
+  AWGN. En PAM pondera las transiciones entre regiones por la distancia de
+  Hamming. En FSK ortogonal calcula la SER mediante cuadratura y usa la
+  simetría para obtener la BER. Falta `symbol_statistics`.
+- `modulation_plots.py` contiene `plot_constellation`. Guarda un PNG con
+  etiquetas, regiones y una superposición opcional de muestras recibidas.
+  FSK de más de dos dimensiones se muestra en un corte ortonormal.
+  Falta `plot_symbol_histogram`.
 - `modulation_report.py`: `format_modulation_report` implementado. Recibe
   configuración, energías y errores teóricos/estimados y estadísticas;
   devuelve Markdown con tablas y unidades, sin calcular métricas ni escribir

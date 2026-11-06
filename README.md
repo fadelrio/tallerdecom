@@ -20,10 +20,8 @@ bits Huffman → modulación → coordenadas → demodulación → bits sin rell
 → decodificación Huffman → texto
 ```
 
-La orquestación está implementada, pero sus dependencias de constelaciones,
-recepción, mediciones y gráficos todavía lanzan `NotImplementedError`.
-No se ocultan esas excepciones ni se simulan resultados faltantes. `main`
-y la CLI conservan el flujo B. No se agrega ruido al canal.
+El orquestador todavía requiere integrar las métricas y el histograma.
+`main` y la CLI ejecutan el flujo B. El canal AWGN se usa en los experimentos.
 
 Se conservan mayúsculas, acentos, espacios, controles, BOM y saltos CR/LF/CRLF.
 No se normaliza Unicode: `é` y `e` seguido de acento combinante son secuencias
@@ -45,16 +43,16 @@ La representación como bytes solo aparece al leer/escribir el archivo UTF-8.
 - `transmitter/huffman.py`: árbol, código, estadísticas y eficiencia.
 - `transmitter/source_encoder.py`: codificación por bloques de 65536 caracteres.
 - `receiver/source_decoder.py`: reconstrucción de texto desde los bits.
-- `transmitter/modulation.py`: PAM Gray existente y esqueleto de FSK ortogonal.
-- `receiver/demodulation.py`: esqueletos del selector y receptores PAM/FSK.
-- `common/constellations.py`: futura definición común de coordenadas y etiquetas.
-- `common/modulation_metrics.py`: futuras energías, SER, BER e histograma.
-- `common/modulation_plots.py`: futuros gráficos, sin importar Matplotlib todavía.
+- `transmitter/modulation.py`: moduladores PAM y FSK ortogonal.
+- `receiver/demodulation.py`: decisiones PAM y FSK por distancia mínima.
+- `common/constellations.py`: definición común de coordenadas y etiquetas.
+- `common/modulation_metrics.py`: energías y tasas de error; histograma pendiente.
+- `common/modulation_plots.py`: gráfico de constelación con Matplotlib.
 - `common/modulation_report.py`: presentación Markdown implementada, sin cálculos.
 - `tests/`: pruebas automáticas; `pytest.ini` limita su recolección a esta carpeta.
 - `experiments/`: scripts manuales; `test_B.py` conserva su estilo original,
   adaptado únicamente a claves de caracteres y resultado `str`.
-- `requirements.txt`: pytest y NumPy, ya utilizado por el programa.
+- `requirements.txt`: pytest, NumPy y Matplotlib.
 - `ENTORNO.md`: preparación del entorno sin depender de ningún editor o agente.
 - Los `__init__.py` identifican paquetes; cada paquete tiene su propio README.
 
@@ -110,23 +108,22 @@ los enumera; el recorrido Huffman sigue funcionando con Unicode. El total
 
 ### Modulación y demodulación: PAM y FSK
 
-- [x] PAM con Gray, coordenadas `(N, 1)` y metadato de relleno.
+- [x] Modulación y demodulación PAM/FSK para grupos completos de bits.
 - [x] Contratos, dataclasses, docstrings y pruebas para las funciones pendientes.
 - [x] Experimento manual PAM con entrada propia y sin ejecución al importarlo.
 - [x] Validación de configuración, conectada al cargador y a la nueva simulación.
 - [x] Presentación de energías, errores e histograma en Markdown.
 - [x] Orquestación sin ruido, probada con sustitutos de las dependencias pendientes.
-- [ ] Implementar la constelación compartida.
-- [ ] Aplicar etiquetamiento configurable y tasa de canal en los moduladores.
-- [ ] Modulación FSK y demodulación PAM/FSK.
-- [ ] Energías teóricas/estimadas, SER, BER y frecuencias por símbolo.
-- [ ] Gráficos con etiquetas y regiones e histograma.
+- [x] Constelación compartida con etiquetado configurable y ajuste de energía por tasa.
+- [x] SER y BER teóricas en AWGN y gráfico con etiquetas y regiones de decisión.
+- [ ] Conservar los bits finales cuando no completan un símbolo.
+- [ ] Revisar las energías y la BER medida, y completar las frecuencias por símbolo y su gráfico.
 - [ ] Completar las dependencias para ejecutar la simulación real de punta a punta.
 
 ### Otras etapas futuras
 
 - [ ] Codificación y decodificación de canal.
-- [ ] AWGN y respuesta impulsiva.
+- [ ] Integrar AWGN y completar los efectos del canal.
 
 ## Ejecución y tests
 
@@ -136,7 +133,7 @@ Requiere Python 3.10 o posterior. Ver [ENTORNO.md](ENTORNO.md).
 python main.py
 python -m pytest -q -rs
 python -m experiments.test_B
-python -m experiments.experimento_PAM
+python -m experiments.experimento_modulacion
 ```
 
 Si la entrada no existe, está vacía o no es UTF-8 válido, el principal
@@ -153,7 +150,6 @@ sustituidos y los casos de PAM existente se ejecutan. Los
 casos funcionales de las funciones pendientes se omiten solo al recibir
 `NotImplementedError` y quedan listos para ejecutarse al implementarlas.
 Consultar [tests/README.md](tests/README.md) para distinguir ambos grupos.
-Matplotlib queda como dependencia futura, cuando se implementen los gráficos.
 
 ## Contratos del apartado de modulación
 
@@ -162,12 +158,12 @@ metadatos para las implementaciones. El constructor no valida.
 `validate_modulation_config` comprueba tipos, M en 2/4/8/16, esquema PAM/FSK,
 etiquetas Gray/binarias, Eb finita positiva y tasa finita en (0, 1].
 El cargador ya lo utiliza y rechaza M=1. No se aceptan booleanos como números.
-PAM y el selector existentes todavía no aplican `labeling` ni `code_rate`.
+PAM y FSK usan Gray por defecto y admiten `labeling="binary"`.
 
 Las coordenadas son matrices reales `(N, D)` en bases ortonormales: `D=1`
 para PAM y `D=M` para FSK ortogonal coherente. `Constellation` asocia filas
-con etiquetas; `ModulatedData` conserva `padding_bits`. `DemodulatedData`
-conservará todos los símbolos decididos, pero devolverá los bits sin relleno.
+con etiquetas. El modulador indica el descarte de bits con `flag_descarte`.
+El demodulador devuelve los símbolos decididos y sus bits.
 Las decisiones empatadas elegirán la primera fila de la constelación.
 
 `EnergyStatistics` distingue energía de símbolo, de bit de canal y de bit de
@@ -186,6 +182,26 @@ al informe de los estudiantes.
 Los README de [transmisor](transmitter/README.md), [receptor](receiver/README.md)
 y [utilidades comunes](common/README.md) indican qué implementar en cada archivo.
 
+## Constelaciones y referencia en AWGN
+
+```python
+from pathlib import Path
+
+from common.constellations import build_constellation
+from common.modulation_metrics import theoretical_error_rates
+from common.modulation_plots import plot_constellation
+from config import ModulationConfig
+
+config = ModulationConfig(4, "FSK")
+constellation = build_constellation(config)
+plot_constellation(constellation, Path("constelacion.png"))
+rates = [theoretical_error_rates(config, db) for db in range(11)]
+```
+
+`plot_constellation` admite `received_symbols` para superponer las muestras
+del canal. En FSK de más de dos dimensiones, el gráfico muestra las regiones
+en un corte ortonormal por el origen y proyecta las muestras en ese plano.
+
 ## Uso de la orquestación de modulación
 
 La llamada compatible con dos argumentos sigue disponible. El parámetro
@@ -201,31 +217,19 @@ run_modulation_simulation(
 )
 ```
 
-Con el estado actual esta llamada se detiene en `build_constellation`, que
-sigue pendiente. La función conecta lectura, Huffman, modulación, demodulación,
-energías, errores, histograma, informe, gráficos y recuperación de texto.
-El receptor retira el relleno una sola vez. Se compara el archivo recibido
-releído con la entrada y se presenta el resultado, sin usar el informe B.
+El recorrido completo todavía depende de las estadísticas y el gráfico del
+histograma y de la integración de las métricas estimadas.
 
 Cuando los bloques estén implementados, se guardarán `<salida>.constellation.png`
 y `<salida>.histogram.png` junto al archivo recibido; el directorio debe existir.
 El Markdown se imprime por consola. Los errores de E/S se informan y las
 dependencias pendientes propagan `NotImplementedError`.
-Hasta integrar `labeling` y `code_rate` en los moduladores, esta entrada exige
-Gray y tasa 1.0: otras opciones válidas se rechazan como todavía no implementadas.
+Esta entrada admite Gray y tasa 1.0.
 
 ## Funciones pendientes del apartado
 
-- `common/constellations.py`: `build_constellation`.
-- `transmitter/modulation.py`: `modulation_FSK`.
-- `receiver/demodulation.py`: `demodulation`, `demodulation_PAM`, `demodulation_FSK`.
-- `common/modulation_metrics.py`: `estimate_energies`, `theoretical_energies`,
-  `estimate_symbol_error_rate`, `estimate_bit_error_rate`, `theoretical_error_rates`,
-  `symbol_statistics`.
-- `common/modulation_plots.py`: `plot_constellation`, `plot_symbol_histogram`.
-
-Además, falta aplicar etiquetas configurables y tasa de canal en el selector
-y los moduladores existentes, y compartir con ellos la definición de constelación.
+- `common/modulation_metrics.py`: `symbol_statistics`.
+- `common/modulation_plots.py`: `plot_symbol_histogram`.
 
 ## Mantenimiento
 
