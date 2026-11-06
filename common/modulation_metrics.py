@@ -177,7 +177,7 @@ def estimate_bit_error_rate(transmitted: str, received: str) -> BitErrorRate:
     Notes:
         Comparar flujos de la misma etapa, antes de decodificar Huffman.
     """
-    # Validar que las secuencias no estén vacías y tengan la misma longitud.
+    # Validar que las secuencias no estén vacías y tengan la misma longitud. ????????????'
     if not transmitted or not received:
         raise ValueError("Las secuencias no pueden estar vacías.")
 
