@@ -2,6 +2,7 @@
 
 from math import erfc, exp, expm1, isfinite, log, log1p, pi, sqrt
 from numbers import Real
+from itertools import zip_longest 
 
 import numpy as np
 
@@ -161,9 +162,8 @@ def estimate_symbol_error_rate(
 
     return float(np.mean(errores))
 
-
 def estimate_bit_error_rate(transmitted: str, received: str) -> BitErrorRate:    
-    # Las cadenas pueden tener diferentes longitudes. Contamos los bits agregados como errores.
+    # Las cadenas pueden tener diferentes longitudes. Contamos los bits descartados como errores.
     """Compara las secuencias binarias transmitida y recibida.
 
     Args:
@@ -181,7 +181,7 @@ def estimate_bit_error_rate(transmitted: str, received: str) -> BitErrorRate:
     Notes:
         Comparar flujos de la misma etapa, antes de decodificar Huffman.
     """
-    # Validar que las secuencias no estén vacías y tengan la misma longitud. ????????????'
+    # Validar que las secuencias no estén vacías.
     if not transmitted or not received:
         raise ValueError("Las secuencias no pueden estar vacías.")
 
@@ -192,9 +192,12 @@ def estimate_bit_error_rate(transmitted: str, received: str) -> BitErrorRate:
     if not all(bit in '01' for bit in received):
         raise ValueError("La secuencia recibida contiene caracteres inválidos.")
 
-    # Contar bits distintos. El código debe ser legible.
-    differing_bits = sum(t_bit != r_bit for t_bit, r_bit in zip(transmitted, received))
-    total_bits = len(transmitted)
+    # Contar bits distintos.
+    differing_bits = sum(
+        t_bit != r_bit
+        for t_bit, r_bit in zip_longest(transmitted, received, fillvalue=None)
+    )
+    total_bits = max(len(transmitted), len(received))
     error_rate = differing_bits / total_bits
 
     return BitErrorRate(
