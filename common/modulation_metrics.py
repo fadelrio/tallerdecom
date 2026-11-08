@@ -43,8 +43,9 @@ def estimate_energies(
         raise ValueError("Las coordenadas deben ser reales y finitas.")
 
     symbol_energy = float(np.mean(np.sum(np.square(symbols, dtype=float), axis=1)))
-    channel_bit_energy = symbol_energy / log2(config.M)
-    return EnergyStatistics(symbol_energy, channel_bit_energy, channel_bit_energy / config.code_rate)
+    channel_bit_energy = symbol_energy / log2(config.M) #CREO QUE ESTA CUENTA ESTÁ MAL
+    bit_energy = symbol_energy / log2(config.M)
+    return EnergyStatistics(symbol_energy, channel_bit_energy, bit_energy)
 
 
 def theoretical_energies(config: ModulationConfig) -> EnergyStatistics:

@@ -31,7 +31,7 @@ def load_config() -> SimulationConfig:
         No lee ni crea archivos. Las rutas pueden editarse aquí.
     """
     root = Path(__file__).resolve().parent
-    return SimulationConfig(root / "res/textito.txt", root / "res/textito_output.txt")
+    return SimulationConfig(root / "res/muchos_martin_fierro.txt", root / "res/output.txt")
 
 
 @dataclass
