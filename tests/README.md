@@ -8,20 +8,20 @@
   UTF-8 inválido e integración del sistema con archivos temporales.
 - `test_report.py`: tablas, métricas, totales, muestra y referencia no aplicable.
 - `test_modulation_contracts.py`: imports, firmas, anotaciones, estructuras,
-  campos opcionales de configuración e importación/entrada del experimento PAM.
-- `test_modulation.py`: PAM y validación activos; futuros casos de
-  constelaciones Gray/binarias, normalización de canal y FSK.
+  campos opcionales de configuración y pruebas de la antigua entrada PAM.
+- `test_modulation.py` cubre PAM, FSK, constelaciones Gray/binarias y
+  normalización de energía.
 - `test_modulation_config.py`: validación activa de tipos, valores finitos,
   tasas de código y conexión del cargador con el validador completo.
 - `test_demodulation.py`: decisiones conocidas, empates, etiquetas, dimensiones,
-  relleno, tasa de canal e ida y vuelta PAM/FSK para M=2, 4, 8 y 16.
+  tasa de canal e ida y vuelta PAM/FSK para M=2, 4, 8 y 16. Algunos casos
+  conservan la expectativa anterior de relleno.
 - `test_modulation_metrics.py`: ejemplos manuales de Es/Ec/Eb, SER, BER,
   referencias binarias coherentes en AWGN e histogramas con conteos cero.
-- `test_modulation_presentation.py`: Markdown activo, preservación de valores,
-  conteos cero, escape y alineación de filas; futura creación de PNG temporales.
-- `test_modulation_main.py`: orquestación activa con bloques sustituidos,
-  retiro de relleno una sola vez, referencia Eb/N0, propagación de pendientes
-  y errores de E/S; futura recuperación real del archivo UTF-8 sin ruido.
+- `test_modulation_presentation.py` verifica tablas Markdown y la creación
+  de PNG de constelación e histograma.
+- `test_modulation_main.py` verifica la orquestación, el informe de un bloque
+  truncado, errores de E/S y la recuperación real de texto UTF-8 sin ruido.
 - `_pending.py`: auxiliar de pruebas que omite solo llamadas que todavía
   lanzan `NotImplementedError`; las aserciones se ejecutan fuera del auxiliar.
 - `README.md`: documentación de pruebas.
@@ -36,36 +36,24 @@ La selección por terminal se prueba con archivos temporales de nombre propio
  y de estilo Gutenberg, preservando encabezados y CRLF. No se descarga ninguna
 obra durante las pruebas ni se necesita conexión a Internet.
 
-## Estado de las pruebas de modulación
+## Pruebas del informe de modulación
 
-Los contratos, la configuración, el informe, la orquestación con bloques
-sustituidos, el experimento reorganizado y PAM existente se comprueban
-normalmente. Los casos funcionales pendientes tienen entradas y resultados
-esperados, pero se omiten cuando la llamada bajo prueba lanza
-`NotImplementedError`. Al implementar una función, sus casos empezarán a
-verificarse automáticamente. Otros errores, incluidos los de validación o
-resultados incorrectos, no se convierten en omisiones.
+```bash
+python -m pytest -q tests/test_modulation_metrics.py tests/test_modulation_presentation.py tests/test_modulation_main.py
+```
 
-Los bloques sustituidos de la prueba de orquestación usan resultados manuales;
-verifican las conexiones y no reemplazan las pruebas de algoritmos ni la
-aceptación de punta a punta, que sigue pendiente de esos bloques.
+Las pruebas de gráficos requieren Matplotlib. Comprueban que se genere un
+PNG de dimensiones positivas. Las etiquetas, regiones de decisión y
+proyecciones se revisan visualmente en los gráficos generados.
 
-Ejecutar `python -m pytest -q -rs` para ver qué funciones continúan pendientes.
-No eliminar la excepción de un esqueleto hasta implementar su comportamiento.
-No hay marcas de omisión permanentes ni pruebas vacías.
+## Fallos conocidos
 
-Los valores esperados se escriben explícitamente o se comparan con propiedades
-del contrato; los tests no reproducen los algoritmos. Las pruebas de gráficos
-solo comprobarán creación de PNG con dimensiones positivas: etiquetas,
-regiones y proyecciones requerirán inspección visual al implementarlas.
-No se requiere Matplotlib para recolectar esta suite; sí NumPy, que ya usa el
-proyecto. La descarga de dependencias es un paso de preparación del entorno.
+En `1c596ee`, la suite completa registró 270 pruebas aprobadas y 57 fallidas.
+Entre los casos pendientes se incluyen los siguientes.
 
-## Fallos previos del informe de fuente
-
-La suite original presenta siete fallos: tres casos de `test_main.py` y cuatro
-de `test_report.py`. `common/report_utils.py` selecciona las líneas con índices
-126 y 127 sin comprobar que existan, por lo que fuentes pequeñas producen
-`IndexError`. Se reprodujeron los mismos fallos sobre la versión original
-del repositorio. Se conserva esa lógica, sin omitir los casos ni modificar
-sus expectativas, porque este cambio solo organiza el apartado de modulación.
+- Algunos contratos de modulación todavía esperan las firmas antiguas, el
+  relleno de bits o el módulo renombrado `experimento_PAM`.
+- La estimación de `Eb` para una tasa de `0.5` devuelve `Ec`. La prueba espera
+  `Eb = Ec / code_rate`.
+- Siete casos de fuente e informe B fallan porque la muestra accede a las
+  líneas 127 y 128 en archivos más cortos. El error es `IndexError`.

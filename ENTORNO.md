@@ -77,19 +77,19 @@ Con el entorno activado, los comandos son iguales en todos los sistemas:
 python -c "import sys; print(sys.executable)"
 python -m pip check
 python main.py
+python -m experiments.modulation_data
 python -m pytest -q
 ```
 
-La primera salida debe apuntar al Python dentro de `.venv`. El programa
-principal procesa el TXT configurado y muestra los resultados de fuente;
-si el archivo no existe, informa el error sin escribir la salida.
-La suite incluye arquitectura, análisis y codificación por bloques e
-integración con Huffman. Las pruebas de decodificación ya se ejecutan.
-La suite comprueba interfaces textuales, Unicode y E/S. Los contratos y PAM
-existente se ejecutan; los casos funcionales pendientes de modulación se omiten
-solo al recibir `NotImplementedError`. Consultar el
-[estado de las pruebas](tests/README.md). Las dependencias directas declaradas
-son `pytest`, `numpy` y `matplotlib`. Matplotlib genera los PNG de constelación.
+La primera salida debe apuntar al Python dentro de `.venv`. `main.py` procesa
+el TXT de `config.py` y escribe el texto recuperado. Con las rutas actuales,
+lee `res/muchos_martin_fierro.txt` y sobrescribe `res/output.txt`.
+`experiments.modulation_data` genera el Markdown y los tres PNG de D/E.
+
+Las dependencias directas son `pytest`, `numpy` y `matplotlib`. Matplotlib se
+usa para generar constelaciones e histogramas durante las pruebas y los
+experimentos. Consultar los [fallos conocidos](tests/README.md) y la
+[guía de experimentos](experiments/README.md).
 
 Para salir de un entorno activado:
 

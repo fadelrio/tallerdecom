@@ -1,9 +1,8 @@
 # Sistema de comunicaciones digitales
 
-Proyecto académico TA137: transmisión de un archivo de texto, con los
-apartados A/B implementados y contratos del apartado de modulación PAM/FSK.
-Se procesa texto por caracteres, no por bytes
-UTF-8. Cada símbolo es un punto de código Unicode de Python `str`.
+Proyecto académico TA137. Incluye el recorrido de fuente de los apartados A/B
+y la modulación, demodulación y obtención de datos para los apartados D/E.
+El análisis de fuente usa puntos de código Unicode de Python `str`.
 
 ## Arquitectura
 
@@ -16,14 +15,15 @@ Ese es el flujo de la CLI actual. La función `run_modulation_simulation`
 ya conecta las etapas del siguiente recorrido:
 
 ```text
-bits Huffman → modulación → coordenadas → demodulación → bits sin relleno
+bits Huffman → modulación → coordenadas → demodulación → bits recuperados
 → decodificación Huffman → texto
 ```
 
 `main` y la CLI ejecutan el flujo B. El orquestador de modulación mide energías,
 errores y frecuencias de símbolos. El canal AWGN se usa en los experimentos.
 
-Se conservan mayúsculas, acentos, espacios, controles, BOM y saltos CR/LF/CRLF.
+La lectura y la escritura conservan mayúsculas, acentos, espacios, controles,
+BOM y saltos CR/LF/CRLF.
 No se normaliza Unicode: `é` y `e` seguido de acento combinante son secuencias
 distintas. Un emoji compuesto puede contener varios puntos de código.
 La representación como bytes solo aparece al leer/escribir el archivo UTF-8.
@@ -33,12 +33,12 @@ La representación como bytes solo aparece al leer/escribir el archivo UTF-8.
 - `main.py`: lectura, rechazo controlado del vacío, transmisión de fuente,
   recepción directa, escritura, comparación y tablas del apartado B;
   `run_modulation_simulation` orquesta la etapa nueva como entrada separada.
-- `config.py`: `SimulationConfig`, rutas de ejemplo en `res/`,
-  `ModulationConfig` y `validate_modulation_config` implementado.
+- `config.py` define las rutas de fuente, los parámetros de modulación y el
+  cálculo de `N0` a partir de `Eb/N0`.
+- `channel/channel.py` aplica ruido AWGN a las coordenadas moduladas.
 - `common/data_types.py`: dataclasses compartidas.
 - `common/file_utils.py`: lectura/escritura UTF-8 y comparación textual exacta.
-- `common/report_utils.py`: preparación y presentación de tablas y muestra
-  de una línea para el informe, sin análisis ni conclusiones.
+- `common/report_utils.py` prepara las tablas y la muestra de texto del apartado B.
 - `transmitter/source_analysis.py`: conteos, probabilidades y entropía.
 - `transmitter/huffman.py`: árbol, código, estadísticas y eficiencia.
 - `transmitter/source_encoder.py`: codificación por bloques de 65536 caracteres.
@@ -46,12 +46,12 @@ La representación como bytes solo aparece al leer/escribir el archivo UTF-8.
 - `transmitter/modulation.py`: moduladores PAM y FSK ortogonal.
 - `receiver/demodulation.py`: decisiones PAM y FSK por distancia mínima.
 - `common/constellations.py`: definición común de coordenadas y etiquetas.
-- `common/modulation_metrics.py`: energías y tasas de error; histograma pendiente.
-- `common/modulation_plots.py`: gráfico de constelación con Matplotlib.
+- `common/modulation_metrics.py` calcula energías, tasas de error y frecuencias
+  por símbolo.
+- `common/modulation_plots.py` genera constelaciones e histogramas en PNG.
 - `common/modulation_report.py`: presentación Markdown implementada, sin cálculos.
 - `tests/`: pruebas automáticas; `pytest.ini` limita su recolección a esta carpeta.
-- `experiments/`: scripts manuales; `test_B.py` conserva su estilo original,
-  adaptado únicamente a claves de caracteres y resultado `str`.
+- `experiments/` contiene los scripts exploratorios y el generador de datos de D/E.
 - `requirements.txt`: pytest, NumPy y Matplotlib.
 - `ENTORNO.md`: preparación del entorno sin depender de ningún editor o agente.
 - Los `__init__.py` identifican paquetes; cada paquete tiene su propio README.
@@ -61,7 +61,7 @@ La representación como bytes solo aparece al leer/escribir el archivo UTF-8.
 `read_file(Path) -> str`, `analyze_source(str) -> SourceStatistics`,
 `build_huffman_code(dict[str, float]) -> HuffmanResult`,
 `encode_source(str, dict[str, str]) -> EncodedSource`,
-`decode_source(EncodedSource, dict[str, str]) -> str`,
+`decode_source(EncodedSource, dict[str, str], discard_incomplete=True) -> str`,
 `write_file(Path, str) -> None` y `compare_data(str, str) -> FileComparison`.
 
 Los conteos, probabilidades y códigos usan caracteres como claves. Los tamaños
@@ -109,16 +109,16 @@ los enumera; el recorrido Huffman sigue funcionando con Unicode. El total
 ### Modulación y demodulación: PAM y FSK
 
 - [x] Modulación y demodulación PAM/FSK para grupos completos de bits.
-- [x] Contratos, dataclasses, docstrings y pruebas para las funciones pendientes.
-- [x] Experimento manual PAM con entrada propia y sin ejecución al importarlo.
+- [x] Experimentos de modulación, BER y energía media.
 - [x] Validación de configuración, conectada al cargador y a la nueva simulación.
 - [x] Presentación de energías, errores e histograma en Markdown.
-- [x] Orquestación sin ruido, probada con sustitutos de las dependencias pendientes.
+- [x] Orquestación sin ruido con pruebas de recuperación de texto.
 - [x] Constelación compartida con etiquetado configurable y ajuste de energía por tasa.
 - [x] SER y BER teóricas en AWGN y gráfico con etiquetas y regiones de decisión.
 - [x] BER medida con conteos de bits errados, incluyendo los descartados al modular.
 - [x] Energías teóricas y estimadas, frecuencias por símbolo e histograma.
 - [x] Datos de D y E, con una corrida reproducible de AWGN a 6 dB.
+- [ ] Corregir `Eb` estimada para tasas de código menores que 1.
 
 ### Otras etapas futuras
 
@@ -131,9 +131,8 @@ Requiere Python 3.10 o posterior. Ver [ENTORNO.md](ENTORNO.md).
 
 ```bash
 python main.py
-python -m pytest -q -rs
-python -m experiments.test_B
-python -m experiments.experimento_modulacion
+python -m experiments.modulation_data
+python -m pytest -q
 ```
 
 Si la entrada no existe, está vacía o no es UTF-8 válido, el principal
@@ -145,11 +144,8 @@ Las pruebas verifican contratos, Unicode, acentos, controles, bloques, errores,
 ida y vuelta y E/S textual. Los experimentos manuales se documentan en
 [experiments/README.md](experiments/README.md).
 
-Los contratos, la validación, el informe, la orquestación con bloques
-sustituidos y los casos de PAM existente se ejecutan. Los
-casos funcionales de las funciones pendientes se omiten solo al recibir
-`NotImplementedError` y quedan listos para ejecutarse al implementarlas.
-Consultar [tests/README.md](tests/README.md) para distinguir ambos grupos.
+Consultar el [estado de la suite](tests/README.md) para ver los fallos conocidos
+y la selección de pruebas de métricas, gráficos y orquestación.
 
 ## Contratos del apartado de modulación
 
@@ -166,23 +162,21 @@ con etiquetas. El modulador indica el descarte de bits con `flag_descarte`.
 El demodulador devuelve los símbolos decididos y sus bits.
 La BER medida cuenta como error cada bit sin contraparte y usa como denominador
 la longitud de la secuencia más larga. El informe muestra la tasa y los conteos.
-Las decisiones empatadas elegirán la primera fila de la constelación.
+Las decisiones empatadas eligen la primera fila de la constelación.
 
 `EnergyStatistics` distingue energía de símbolo, de bit de canal y de bit de
 información. `ErrorRates` conserva SER y BER. `SymbolStatistics` incluye
 conteos y probabilidades de todos los símbolos, incluso los no observados.
 Estas dataclasses no calculan ni validan sus datos.
 
-Las referencias teóricas supondrán símbolos equiprobables y AWGN; Eb/N0 se
-expresará en dB respecto del bit de información. SER/BER serán anteriores a
-decodificar el canal. Las muestras y comparaciones vacías o incompatibles se
-rechazarán en las métricas. Los moduladores y demoduladores sí admitirán
-secuencias vacías válidas. El histograma no demostrará automáticamente
-equiprobabilidad; la interpretación y la explicación de Gray corresponden
-al informe de los estudiantes.
+Las referencias teóricas suponen símbolos equiprobables y AWGN. `Eb/N0` se
+expresa en dB respecto del bit de información. La SER y la BER se miden sobre
+las decisiones del demodulador. Las métricas requieren muestras no vacías y
+entradas compatibles. El histograma incluye la referencia equiprobable `1/M`
+para comparar con las frecuencias observadas.
 
 Los README de [transmisor](transmitter/README.md), [receptor](receiver/README.md)
-y [utilidades comunes](common/README.md) indican qué implementar en cada archivo.
+y [utilidades comunes](common/README.md) detallan las interfaces y sus limitaciones.
 
 ## Constelaciones y referencia en AWGN
 
@@ -206,7 +200,7 @@ en un corte ortonormal por el origen y proyecta las muestras en ese plano.
 
 ## Datos para los apartados D y E
 
-Desde la raíz del repositorio, con las dependencias de `requirements.txt`:
+Ejecutar desde la raíz con las dependencias de `requirements.txt` instaladas.
 
 ```bash
 python -m experiments.modulation_data
@@ -214,8 +208,9 @@ python -m experiments.modulation_data
 
 Genera [el Markdown de datos](res/modulation_info.md) y sus tres PNG en `res/`.
 La tabla cubre PAM y FSK con M = 2, 4, 8 y 16. Para los gráficos y la corrida
-con AWGN a 6 dB se usa 4-PAM Gray sobre `res/textito.txt`. Se puede cambiar la
-muestra con `--input`, `--tipo` y `--orden`, y el destino con `--output`.
+con AWGN a 6 dB se usa 4-PAM Gray sobre `res/textito.txt`, con semilla 42.
+Esta corrida usa tasa 1. Se puede cambiar la muestra con `--input`, `--tipo`
+y `--orden`, y el destino del Markdown y sus PNG con `--output`.
 
 ## Uso de la orquestación de modulación
 
@@ -224,11 +219,14 @@ opcional `eb_n0_db`, solo por nombre y por defecto 0 dB, identifica la referenci
 teórica en AWGN; las muestras transmitidas siguen sin ruido.
 
 ```python
-from config import load_config, load_modulation_config
+from pathlib import Path
+
+from config import SimulationConfig, load_modulation_config
 from main import run_modulation_simulation
 
 run_modulation_simulation(
-    load_config(), load_modulation_config(4, "PAM"), eb_n0_db=0.0,
+    SimulationConfig(Path("res/textito.txt"), Path("recibido_modulacion.txt")),
+    load_modulation_config(4, "PAM"), eb_n0_db=0.0,
 )
 ```
 
@@ -244,30 +242,36 @@ implementadas interfaces que solo lanzan `NotImplementedError`.
 
 ## Datos para el informe B
 
-Configurar `input_file` y `output_file` en `config.py` y ejecutar `python main.py`.
-La salida se organiza en seis secciones:
+`python main.py` usa `res/muchos_martin_fierro.txt` como entrada y sobrescribe
+`res/output.txt` con el texto recibido. También se puede elegir cada ruta por
+terminal. La salida de datos se organiza en seis secciones.
 
 1. Carácter escapado, identificador Unicode, cantidad, probabilidad, código y longitud.
 2. Verificación de prefijo por pares, indicador del constructor, alfabeto y longitudes.
 3. Entropía, mínimo promedio teórico, promedio real, varianza, eficiencia y código fijo.
 4. Totales de bits Huffman y referencia fija (sin diccionario ni metadatos).
-5. Primera línea completa, palabras binarias por carácter, bits concatenados y texto
-   decodificado; se incluye el terminador y se muestran escapados los controles.
+5. Muestra de las líneas 127 y 128, palabras binarias por carácter, bits
+   concatenados y texto decodificado, con los controles escapados.
 6. Igualdad de los textos y cantidades de caracteres, tras releer el archivo recibido.
 
-Para guardar lo mostrado en un archivo independiente:
+La muestra requiere al menos 128 líneas según `str.splitlines()`. Con un texto
+más corto, el programa escribe el archivo recibido y luego falla con `IndexError`
+al preparar el Markdown. El título de la muestra conserva el rótulo «Primera
+línea» y el campo «En archivo recibido» muestra el prefijo del archivo.
+[Salida guardada de una corrida anterior](res/output_info.md).
+
+Para guardar el Markdown en un archivo independiente, redirigir la salida.
 
 ```bash
 python main.py > datos_informe.md
 ```
 
-Usar un destino distinto de la entrada y de `recibido.txt`. No se generan
-conclusiones, interpretación de métricas ni documentos PDF/Word.
+Usar un destino distinto de la entrada y del archivo recibido.
 
 ## Usar textos propios o descargados de Gutenberg
 
-El programa acepta cualquier archivo local de texto UTF-8. No hay que cambiar
-el algoritmo ni editar `config.py` para alternar entre fuentes:
+La CLI admite archivos locales UTF-8. Para generar el Markdown de B, elegir un
+texto de al menos 128 líneas. Las rutas de ejemplo se pasan por terminal.
 
 ```bash
 python main.py --input "textos/mi texto.txt" --output "recibido_propio.txt"
@@ -303,10 +307,9 @@ la lista temporal del codificador, pero no convierte el sistema en streaming.
 
 ## Salida Markdown
 
-Las secciones y tablas del informe se imprimen en Markdown por consola.
-Los símbolos especiales se escapan en las tablas y la muestra se incluye en
-un bloque literal. No se crea automáticamente ningún archivo de informe.
-El archivo recibido de la simulación sigue escribiéndose en `--output`.
+En el apartado B, `main.py` imprime las tablas en Markdown por consola y
+escribe el texto recibido en `--output`. Los símbolos especiales se escapan en
+las tablas y la muestra se incluye en un bloque literal.
 
 ```bash
 # Ver el Markdown por consola

@@ -42,18 +42,26 @@
 ## Convenciones de los contratos
 
 `Constellation.symbols` y `.labels` se corresponden fila a fila.
-`DemodulatedData.symbols` conserva también el símbolo que contenía relleno;
-`.bits` ya no lo incluye. `EnergyStatistics` usa `symbol_energy` (Es),
-`channel_bit_energy` (Ec) y `bit_energy` (Eb de información). `ErrorRates`
-contiene `symbol_error_rate` y `bit_error_rate`. `SymbolStatistics` conserva
-`labels`, `counts` enteros y `probabilities`, en el orden de la constelación.
+`ModulatedData.flag_descarte` indica si se descartó un grupo incompleto.
+`DemodulatedData.symbols` contiene las coordenadas decididas de los símbolos
+transmitidos y `.bits` contiene sus etiquetas concatenadas. `SymbolStatistics`
+conserva `labels`, `counts` y `probabilities` en el orden de la constelación.
+
+`EnergyStatistics` distingue `symbol_energy` (Es), `channel_bit_energy` (Ec)
+y `bit_energy` (Eb de información). La relación de referencia es
+`Ec = Es / log2(M)` y `Eb = Ec / code_rate`. La estimación actual devuelve
+`Eb = Ec` para todas las tasas. Esto coincide con la referencia cuando la
+tasa es 1 y queda pendiente el ajuste de `Eb` para tasas menores.
+
+`ErrorRates` contiene las tasas numéricas `symbol_error_rate` y `bit_error_rate`.
+`estimate_bit_error_rate` devuelve `BitErrorRate` con `error_rate`, `bits_vistos`
+y `bits_errados`. Cuenta como error cada bit sin contraparte y usa la longitud
+de la secuencia más larga como denominador. Ambas cadenas deben ser no vacías.
 
 Las referencias teóricas suponen símbolos equiprobables, AWGN y recepción
-coherente. Eb/N0 se da en dB respecto de información; con código de canal,
-la referencia será previa a decodificarlo, sin atribuirle ganancia de código.
-Documentar las aproximaciones de BER que se elijan al implementar.
-Las métricas rechazarán secuencias vacías, dimensiones incompatibles o datos
-inválidos; SER compara símbolos decididos, no las observaciones con ruido.
+coherente. `Eb/N0` se da en dB respecto del bit de información. Las tasas se
+refieren a las decisiones del demodulador, antes de cualquier decodificación
+de canal. La SER medida compara los símbolos transmitidos con los decididos.
 
-Los resultados esperados de ejemplos pequeños están escritos en los tests;
-las pruebas no contienen implementaciones de los algoritmos pendientes.
+Las [pruebas de métricas](../tests/test_modulation_metrics.py) documentan
+resultados esperados para ejemplos pequeños.
