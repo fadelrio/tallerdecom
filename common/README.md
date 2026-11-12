@@ -65,3 +65,22 @@ de canal. La SER medida compara los símbolos transmitidos con los decididos.
 
 Las [pruebas de métricas](../tests/test_modulation_metrics.py) documentan
 resultados esperados para ejemplos pequeños.
+
+## Codificación de canal
+
+`data_types.py` reúne `ChannelCodeConfig`, `EncodedChannel`,
+`ChannelWordDecoding`, `DecodedChannel`, `ChannelCodeParameters` y el alias
+`SyndromeTable`. Los flujos binarios se representan como cadenas de '0' y '1'.
+
+`channel_code.py` declara las funciones compartidas con implementación pendiente:
+
+- `build_parity_check_matrix(code: ChannelCodeConfig) -> np.ndarray` recibe
+  la generadora sistemática `G = [P | I_k]` de forma `(k, n)` y devuelve
+  `H = [I_(n-k) | Pᵀ]` de forma `(n-k, n)` en GF(2).
+- `build_syndrome_table(parity_check_matrix: np.ndarray) -> SyndromeTable`
+  devuelve el líder de peso mínimo para cada síndrome. En caso de empate
+  elige la máscara lexicográficamente menor. Para el grupo 4 hay 64 entradas
+  con claves de seis bits y máscaras de diez bits.
+- `calculate_channel_code_parameters(code: ChannelCodeConfig) -> ChannelCodeParameters`
+  devuelve la distancia mínima y las capacidades garantizadas de detección
+  y corrección por palabra. Para el grupo 4 se espera `(3, 2, 1)`.

@@ -264,3 +264,83 @@ class ChannelConfig:
 
     ebno_dB: float
     N0: float # densidad espectral de potencia del ruido
+
+
+@dataclass
+class ChannelCodeConfig:
+    """Parámetros de un código lineal de bloques sistemático.
+
+    Attributes:
+        n: Cantidad de bits por palabra codificada.
+        k: Cantidad de bits de información por palabra.
+        generator_matrix: Matriz binaria G de forma (k, n), con I_k a la derecha.
+    """
+
+    n: int
+    k: int
+    generator_matrix: np.ndarray
+
+
+@dataclass
+class EncodedChannel:
+    """Flujo de palabras de canal y longitud de la fuente codificada.
+
+    Attributes:
+        bits: Palabras binarias de canal concatenadas en orden de transmisión.
+        source_bit_length: Cantidad de bits Huffman antes del relleno de canal.
+    """
+
+    bits: str
+    source_bit_length: int
+
+
+@dataclass
+class ChannelWordDecoding:
+    """Resultado de procesar una palabra recibida.
+
+    Attributes:
+        corrected_word: Palabra que resulta de aplicar la máscara, o palabra
+            recibida si se detectó un error y se dejó sin corregir.
+        syndrome: Síndrome binario de la palabra recibida antes de corregir.
+        applied_error: Máscara aplicada, con ceros para síndrome cero.
+            Vale None si se detectó un error y se conservó la palabra recibida.
+    """
+
+    corrected_word: str
+    syndrome: str
+    applied_error: str | None
+
+
+@dataclass
+class DecodedChannel:
+    """Bits recuperados para Huffman y conteos del decodificador de canal.
+
+    Attributes:
+        source: Bits Huffman recuperados después de quitar el relleno de canal.
+        detected_blocks: Cantidad de bloques recibidos con síndrome no nulo.
+        uncorrected_blocks: Cantidad de bloques detectados que se conservaron
+            sin corregir.
+    """
+
+    source: EncodedSource
+    detected_blocks: int
+    uncorrected_blocks: int
+
+
+@dataclass
+class ChannelCodeParameters:
+    """Distancia mínima y capacidades garantizadas por palabra.
+
+    Attributes:
+        minimum_distance: Distancia de Hamming mínima entre palabras distintas.
+        detectable_errors: Máximo garantizado al verificar una palabra.
+        correctable_errors: Máximo garantizado al corregir una palabra.
+    """
+
+    minimum_distance: int
+    detectable_errors: int
+    correctable_errors: int
+
+
+# Cada clave es un síndrome de n-k bits y su valor es el líder de n bits.
+SyndromeTable = dict[str, str]

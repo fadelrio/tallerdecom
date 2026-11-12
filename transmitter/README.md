@@ -34,3 +34,16 @@ es `Es = log2(M) · Eb · code_rate` con símbolos equiprobables.
 
 Los flujos con métricas requieren al menos un grupo completo. El orquestador
 `main.run_modulation_simulation` admite Gray y tasa 1.
+
+## Codificación de canal
+
+`channel_encoder.py` declara dos funciones con implementación pendiente:
+
+- `encode_channel_word(message_bits: str, code: ChannelCodeConfig) -> str`
+  recibe un mensaje de `k` bits y devuelve una palabra de `n` bits, con el
+  mensaje en los últimos `k` bits.
+- `encode_channel(source: EncodedSource, code: ChannelCodeConfig) -> EncodedChannel`
+  agrupa los bits Huffman en bloques de `k` y usa `encode_channel_word` para
+  cada bloque. Completa el último con ceros a la derecha si hace falta y
+  devuelve las palabras concatenadas junto con la longitud original en
+  `source_bit_length`. La fuente vacía corresponde a un flujo de longitud cero.

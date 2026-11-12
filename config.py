@@ -5,7 +5,24 @@ from math import isfinite
 from numbers import Integral, Real
 from pathlib import Path
 
-from common.data_types import ChannelConfig
+import numpy as np
+
+from common.data_types import ChannelCodeConfig, ChannelConfig
+
+
+GROUP_4_CHANNEL_CODE = ChannelCodeConfig(
+    n=10,
+    k=4,
+    generator_matrix=np.array(
+        [
+            [1, 1, 0, 1, 0, 0, 1, 0, 0, 0],
+            [1, 0, 1, 0, 1, 0, 0, 1, 0, 0],
+            [0, 1, 1, 1, 0, 1, 0, 0, 1, 0],
+            [1, 1, 0, 1, 1, 1, 0, 0, 0, 1],
+        ],
+        dtype=np.uint8,
+    ),
+)
 
 
 @dataclass

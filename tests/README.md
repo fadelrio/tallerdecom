@@ -7,6 +7,8 @@
 - `test_main.py`: E/S UTF-8, preservación de BOM y CR/LF/CRLF, rechazo del vacío,
   UTF-8 inválido e integración del sistema con archivos temporales.
 - `test_report.py`: tablas, métricas, totales, muestra y referencia no aplicable.
+- `test_channel_coding_contracts.py`: imports, firmas, anotaciones, docstrings,
+  campos de las dataclasses y parámetros asignados al grupo 4.
 - `test_modulation_contracts.py`: imports, firmas, anotaciones, estructuras,
   campos opcionales de configuración y pruebas de la antigua entrada PAM.
 - `test_modulation.py` cubre PAM, FSK, constelaciones Gray/binarias y
@@ -35,6 +37,16 @@ Pendiente: más casos de diccionarios malformados y mayor cobertura de formatos 
 La selección por terminal se prueba con archivos temporales de nombre propio
  y de estilo Gutenberg, preservando encabezados y CRLF. No se descarga ninguna
 obra durante las pruebas ni se necesita conexión a Internet.
+
+## Pruebas de contrato de codificación de canal
+
+```bash
+python -m pytest -q tests/test_channel_coding_contracts.py
+```
+
+Cuando estén programados los cuerpos, verificar el vector
+`1000 → 1101001000`, los diez errores simples sobre cada una de las 16
+palabras válidas y una ida y vuelta con longitud de fuente no múltiplo de cuatro.
 
 ## Pruebas del informe de modulación
 

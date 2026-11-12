@@ -29,3 +29,21 @@ constelación.
 binarias. Los bits de un grupo incompleto ya fueron descartados en transmisión.
 La SER compara las coordenadas decididas con las transmitidas. La BER compara
 los bits recuperados con la secuencia original antes de decodificar Huffman.
+
+## Decodificación de canal
+
+`channel_decoder.py` declara dos funciones con implementación pendiente:
+
+- `decode_channel_word(received_word: str, parity_check_matrix: np.ndarray, syndrome_table: SyndromeTable) -> ChannelWordDecoding`
+  recibe una palabra de `n` bits y devuelve la palabra resultante, el
+  síndrome de la palabra recibida y la máscara aplicada.
+- `decode_channel(received_bits: str, parity_check_matrix: np.ndarray, syndrome_table: SyndromeTable, *, source_bit_length: int) -> DecodedChannel`
+  recibe el flujo demodulado sin relleno de modulación. Procesa palabras de
+  `n` bits, concatena los últimos `k` bits de cada resultado y recorta el
+  relleno de canal según la longitud original. Devuelve un `EncodedSource`
+  y los conteos de bloques con síndrome distinto de cero y de bloques
+  detectados que quedaron sin corregir.
+
+Para un síndrome cero se registra una máscara de ceros. Si se detecta un error
+y se conserva la palabra recibida, la máscara vale `None`. La política para
+líderes de peso dos o más queda pendiente.
