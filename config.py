@@ -9,7 +9,6 @@ import numpy as np
 
 from common.data_types import ChannelCodeConfig, ChannelConfig
 
-
 GROUP_4_CHANNEL_CODE = ChannelCodeConfig(
     n=10,
     k=4,
@@ -23,7 +22,6 @@ GROUP_4_CHANNEL_CODE = ChannelCodeConfig(
         dtype=np.uint8,
     ),
 )
-
 
 @dataclass
 class SimulationConfig:
