@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from common.data_types import ChannelWordDecoding, DecodedChannel, SyndromeTable
+from common.data_types import ChannelWordDecoding, DecodedChannel, SyndromeTable, EncodedSource
 
 
 def decode_channel_word(
