@@ -138,15 +138,17 @@ Huffman → codificación de canal → modulación → canal → demodulación
 
 `config.GROUP_4_CHANNEL_CODE` contiene los parámetros y la matriz generadora
 asignados al grupo 4. El código sistemático (10, 4) tiene tasa 0.4, distancia
-mínima 3 y corrección garantizada de un error por palabra. Los contratos se
-documentan en los README de [transmisor](transmitter/README.md),
-[receptor](receiver/README.md) y [utilidades comunes](common/README.md).
+mínima 3 y corrección garantizada de un error por palabra. La macro booleana
+`CHANNEL_CODING_ENABLED` en `main.py` activa o desactiva conjuntamente el
+codificador y el decodificador de canal; usa `code_rate=0.4` activada y
+`code_rate=1.0` desactivada. Los contratos se documentan en los README de
+[transmisor](transmitter/README.md), [receptor](receiver/README.md) y
+[utilidades comunes](common/README.md).
 
-La integración deberá habilitar o deshabilitar ambos bloques con un selector,
-usando `code_rate=0.4` con codificación y `code_rate=1.0` sin ella. También
-deberá agregar y retirar el relleno propio de la modulación por separado del
-relleno de canal. Con M=8, el modulador actual agrupa de a tres bits y el
-descarte del sobrante puede dejar incompleta la última palabra de canal.
+La integración también deberá agregar y retirar el relleno propio de la
+modulación por separado del relleno de canal. Con M=8, el modulador actual
+agrupa de a tres bits y el descarte del sobrante puede dejar incompleta la
+última palabra de canal.
 
 ## Ejecución y tests
 

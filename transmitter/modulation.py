@@ -16,6 +16,7 @@ def modulation(encoded: EncodedSource, Modulacion_config: ModulationConfig) -> M
     Returns:
         Objeto ModulatedData con los símbolos modulados.
     """
+    
     if(Modulacion_config.tipo == 'PAM'):
         result = modulation_PAM(encoded, Modulacion_config)
     elif(Modulacion_config.tipo == 'FSK'):

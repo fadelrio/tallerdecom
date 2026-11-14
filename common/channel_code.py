@@ -69,16 +69,15 @@ def build_syndrome_table(parity_check_matrix: np.ndarray) -> SyndromeTable:
         síndrome se elige el patrón de peso mínimo y, en caso de empate,
         la máscara lexicográficamente menor. El síndrome cero tiene máscara cero.
         Se recorren todos los patrones de error de n bits ordenados por peso
-        y, a igual peso, por valor (que coincide con el orden lexicográfico
-        de las cadenas); el primero que produce cada síndrome es su líder.
+        y, a igual peso, por valor; el primero que produce cada síndrome es su líder.
     """
     parity = np.asarray(parity_check_matrix, dtype=np.int64)
 
     if parity.ndim != 2 or not np.isin(parity, (0, 1)).all():
         raise ValueError("H debe ser una matriz bidimensional de ceros y unos.")
 
-    redundancy, n = parity.shape
-    total_syndromes = 2**redundancy
+    redundancy, n = parity.shape # Número de filas (redundancia) y columnas, recordad que H es de (n-k) x n
+    total_syndromes = 2**redundancy #hay 2^(n-k) sindromes posibles, que es el tamaño de la tabla de sindromes
 
     # Patrones de error como enteros de n bits, de menor a mayor peso.
     patterns = sorted(range(2**n), key=lambda value: (bin(value).count("1"), value))
@@ -123,12 +122,19 @@ def calculate_channel_code_parameters(code: ChannelCodeConfig) -> ChannelCodePar
     k = code.k
 
     # Todos los mensajes no nulos de k bits, uno por fila.
-    values = np.arange(1, 2**k)
-    messages = (values[:, None] >> np.arange(k - 1, -1, -1)) & 1
+    values = np.arange(1, 2**k) #Genera todos los mensajes posibles, del 1 a 2^k-1
+    messages = (values[:, None] >> np.arange(k - 1, -1, -1)) & 1 #Convierte los enteros en matrices de bits, cada fila es un mensaje de k bits
 
-    codewords = (messages @ generator) % 2
-    minimum_distance = int(codewords.sum(axis=1).min())
-
+    codewords = (messages @ generator) % 2 #Multiplica cada mensaje por la matriz generadora para obtener las palabras de código, módulo 2
+    minimum_distance = int(codewords.sum(axis=1).min()) #Calcula la distancia mínima como el peso mínimo de Hamming entre las palabras de código no nulas
+    #con la suma se fija cuál es la palabra con menor cantidad de unos
+    
+    """
+    #Descomentar para imprimir las palabras de código válidas
+    print(f"\n##########\n")
+    print("Palabras de código válidas: \n")
+    print(codewords)
+    """
     return ChannelCodeParameters(
         minimum_distance=minimum_distance,
         detectable_errors=minimum_distance - 1,

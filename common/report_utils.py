@@ -15,6 +15,7 @@ from common.data_types import (
     HuffmanResult,
     SourceReport,
     SourceStatistics,
+    SyndromeTable,
 )
 
 
@@ -246,3 +247,23 @@ def format_source_report(
         f"- Caracteres recibidos: {comparison.received_size}",
     ]
     return "\n".join(lines)
+
+
+def print_syndrome_table(syndrome_table: SyndromeTable) -> None:
+    """Imprime la tabla de sindromes y sus líderes.
+
+    Args:
+        syndrome_table: Diccionario de sindromes a patrones de error.
+    """
+    print("Error | Sindrome")
+    ordered_entries = sorted(
+        syndrome_table.items(),
+        key=lambda entry: (
+            0 if entry[1].count("1") == 0 else
+            1 if entry[1].count("1") == 1 else
+            2,
+            entry[1],
+        ),
+    )
+    for syndrome, error in ordered_entries:
+        print(f"{error} | {syndrome}")

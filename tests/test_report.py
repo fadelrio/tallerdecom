@@ -6,6 +6,7 @@ from common.data_types import CodeStatistics, EncodedSource, HuffmanResult
 from common.file_utils import compare_data
 from common.report_utils import (
     build_coding_report, build_source_table, format_source_report,
+    print_syndrome_table,
 )
 from transmitter.source_analysis import analyze_source
 
@@ -97,3 +98,28 @@ def test_windows1252_unassigned_control() -> None:
     code = HuffmanResult({"\x81": "0"}, CodeStatistics(0.0, 1.0, 0.0, True))
     report = build_coding_report(stats, code, EncodedSource("0"))
     assert not report.fixed_representable
+
+
+def test_syndrome_table_prints_by_error_priority_and_lexicographic_order(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Imprime el error nulo, los errores simples y el resto por máscara."""
+    table = {
+        "111": "1100",
+        "101": "0010",
+        "011": "1010",
+        "010": "0001",
+        "001": "0100",
+        "000": "0000",
+    }
+
+    print_syndrome_table(table)
+
+    assert capsys.readouterr().out.splitlines() == [
+        "Error | Sindrome",
+        "0000 | 000",
+        "0001 | 010",
+        "0100 | 001",
+        "1010 | 011",
+        "1100 | 111",
+    ]

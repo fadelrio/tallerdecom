@@ -12,6 +12,8 @@ python -m experiments.energias_estimadas
 python -m experiments.experimento_modulacion
 python -m experiments.bit_error_rate
 python -m experiments.modulation_data
+python -m experiments.codificacion_canal
+python -m experiments.informe_canal
 ```
 
 | Módulo | Datos que produce | Archivos que escribe |
@@ -20,6 +22,8 @@ python -m experiments.modulation_data
 | `experimento_modulacion` | Dimensiones y primeras coordenadas de 16-PAM Gray antes y después de AWGN a 9 dB, y símbolos decididos. | Texto recuperado en la salida configurada. |
 | `bit_error_rate` | BER medida y conteos de bits errados y evaluados para 16-PAM Gray con AWGN a 9 dB. | Texto recuperado en la salida configurada. |
 | `modulation_data` | Tablas de D/E y una corrida reproducible de 4-PAM Gray con AWGN a 6 dB. | `res/modulation_info.md` y tres PNG de constelación transmitida, histograma y constelación recibida. |
+| `codificacion_canal` | Comprueba las matrices, tabla de síndromes, parámetros, codificación y corrección de errores del código de canal del grupo 4. | Solo salida por consola. |
+| `informe_canal` | Muestra G, H, n, k, tasa, capacidades, tabla de síndromes y un ejemplo de corrección. | Solo salida por consola. |
 
 Los primeros tres módulos toman la entrada de `load_config()`, actualmente
 `res/muchos_martin_fierro.txt`. `experimento_modulacion` y `bit_error_rate`
