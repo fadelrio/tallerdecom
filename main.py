@@ -33,7 +33,7 @@ from transmitter.modulation import modulation
 
 CHANNEL_EB_N0_DB = 12.0
 CHANNEL_NOISE_SEED = 42
-CHANNEL_CODING_ENABLED = False
+CHANNEL_CODING_ENABLED = True
 
 
 def _default_simulation_config() -> SimulationConfig:
